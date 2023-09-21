@@ -3,15 +3,18 @@ use sqlx::SqlitePool;
 
 use crate::ops;
 
-#[derive(Debug, Parser)]
+#[derive(Parser)]
 pub struct Cmd {
     env: String,
-    path: String
+    path: Option<String>,
 }
 
 impl Cmd {
     pub async fn run(&self, db: &SqlitePool) -> std::io::Result<()> {
-        ops::import_from(db, &self.env, &self.path).await?;
+        match &self.path {
+            Some(path) => ops::import_from_file(db, &self.env, path).await?,
+            None => ops::import_from_stdin(db, &self.env).await?
+        }
 
         Ok(())
     }
