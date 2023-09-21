@@ -27,7 +27,7 @@ pub async fn import_from(pool: &SqlitePool, env: &str, path: &str) -> io::Result
             continue
         }
 
-        if let Some((k, v)) = line.unwrap().split_once("=") {
+        if let Some((k, v)) = line.unwrap().split_once('=') {
             sqlx::query("INSERT INTO environments(env,key,value) VALUES (?, upper(?), ?);")
                 .bind(env)
                 .bind(k)
