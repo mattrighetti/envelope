@@ -28,16 +28,9 @@ pub async fn init() -> EnvelopeResult<SqlitePool> {
         .await
         .map_err(|err| format!("{}\nfile: {}", err, db_path))?;
 
-    sqlx::query(
-        r#"CREATE TABLE IF NOT EXISTS environments(
-        env VARCHAR(50) NOT NULL,
-        key TEXT NOT NULL,
-        value TEXT,
-        created_at INTEGER NOT NULL DEFAULT (strftime('%s', 'now')),
-        PRIMARY KEY(env,key,created_at));"#
-    )
-    .execute(&pool)
-    .await?;
+    sqlx::migrate!("./migrations")
+        .run(&pool)
+        .await?;
 
     Ok(pool)
 }
