@@ -13,11 +13,18 @@ fn blue(s: &str) -> String {
 }
 
 pub async fn print(pool: &SqlitePool, env: &str) -> io::Result<()> {
-    let envs = sqlx::query_as::<_, EnvironmentRow>("SELECT * FROM environments WHERE env = ?")
-        .bind(env)
-        .fetch_all(pool)
-        .await
-        .map_err(|e| Error::new(ErrorKind::Other, e.to_string()))?;
+    let envs = sqlx::query_as::<_, EnvironmentRow>(
+        r"SELECT env, key, value, created_at
+        FROM environments
+        WHERE env = ?
+        GROUP BY env, key
+        HAVING MAX(created_at)
+        ORDER BY env, key;"
+    )
+    .bind(env)
+    .fetch_all(pool)
+    .await
+    .map_err(|e| Error::new(ErrorKind::Other, e.to_string()))?;
 
     for env in envs {
         println!("{}  {}", red(&env.key), blue(&env.value));

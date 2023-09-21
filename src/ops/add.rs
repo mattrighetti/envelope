@@ -8,7 +8,7 @@ use std::io::{Error, ErrorKind};
 ///
 /// If the value of v is None, an empty string is inserted
 pub async fn add_var(db: &SqlitePool, env: &str, k: &str, v: &str) -> io::Result<()> {
-    sqlx::query("INSERT INTO environments(env,key,value) VALUES (?, ?, ?);")
+    sqlx::query("INSERT INTO environments(env,key,value) VALUES (?, upper(?), ?);")
         .bind(env)
         .bind(k)
         .bind(v)
@@ -28,7 +28,7 @@ pub async fn import_from(pool: &SqlitePool, env: &str, path: &str) -> io::Result
         }
 
         if let Some((k, v)) = line.unwrap().split_once("=") {
-            sqlx::query("INSERT INTO environments(env,key,value) VALUES (?, ?, ?);")
+            sqlx::query("INSERT INTO environments(env,key,value) VALUES (?, upper(?), ?);")
                 .bind(env)
                 .bind(k)
                 .bind(v)
