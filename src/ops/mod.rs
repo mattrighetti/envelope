@@ -1,10 +1,12 @@
 mod add;
 mod print;
 mod delete;
+mod export;
 
 pub use add::*;
 pub use print::*;
 pub use delete::*;
+pub use export::*;
 
 use std::path::Path;
 use std::io::{self, BufRead};
