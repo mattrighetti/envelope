@@ -19,8 +19,8 @@ fn build_query(env: Option<&str>) -> String {
         WHERE 1 = 1 "
     );
 
-    if let Some(env) = env {
-        query_builder.push("AND env = ? ");
+    if env.is_some() {
+        query_builder.push("AND env =");
         query_builder.push_bind(env);
     }
 
@@ -34,8 +34,8 @@ fn build_query(env: Option<&str>) -> String {
 }
 
 pub async fn print(pool: &SqlitePool, env: Option<&str>) -> io::Result<()> {
-    let q = build_query(env);
-    let envs = sqlx::query_as::<_, EnvironmentRow>(&q)
+    let sql = build_query(env);
+    let envs = sqlx::query_as::<_, EnvironmentRow>(&sql)
         .fetch_all(pool)
         .await
         .map_err(|e| Error::new(ErrorKind::Other, e.to_string()))?;
@@ -48,8 +48,8 @@ pub async fn print(pool: &SqlitePool, env: Option<&str>) -> io::Result<()> {
 }
 
 pub async fn print_raw(pool: &SqlitePool, env: Option<&str>) -> io::Result<()> {
-    let q = build_query(env);
-    let envs = sqlx::query_as::<_, EnvironmentRow>(&q)
+    let sql = build_query(env);
+    let envs = sqlx::query_as::<_, EnvironmentRow>(&sql)
         .fetch_all(pool)
         .await
         .map_err(|e| Error::new(ErrorKind::Other, e.to_string()))?;
