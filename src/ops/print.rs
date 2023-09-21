@@ -2,7 +2,7 @@ use sqlx::{SqlitePool, Sqlite, QueryBuilder};
 use crate::db::EnvironmentRow;
 
 use std::io;
-use std::io::{Error, ErrorKind};
+use std::io::{Error, ErrorKind, Write};
 
 fn red(s: &str) -> String {
     format!("\x1b[31m{}\x1b[0m", s)
@@ -41,7 +41,7 @@ pub async fn print(pool: &SqlitePool, env: Option<&str>) -> io::Result<()> {
         .map_err(|e| Error::new(ErrorKind::Other, e.to_string()))?;
 
     for env in envs {
-        println!("{}  {}", red(&env.key), blue(&env.value));
+        writeln!(io::stdout(), "{}  {}", red(&env.key), blue(&env.value))?;
     }
 
     Ok(())
@@ -55,7 +55,7 @@ pub async fn print_raw(pool: &SqlitePool, env: Option<&str>) -> io::Result<()> {
         .map_err(|e| Error::new(ErrorKind::Other, e.to_string()))?;
 
     for env in envs {
-        println!("{}={}", &env.key, &env.value);
+        writeln!(io::stdout(), "{}={}", &env.key, &env.value)?;
     }
 
     Ok(())
