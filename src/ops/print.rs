@@ -35,7 +35,12 @@ fn build_query(env: Option<&str>) -> String {
 
 pub async fn print(pool: &SqlitePool, env: Option<&str>) -> io::Result<()> {
     let sql = build_query(env);
-    let envs = sqlx::query_as::<_, EnvironmentRow>(&sql)
+    let mut query = sqlx::query_as::<_, EnvironmentRow>(&sql);
+    if let Some(env) = env {
+        query = query.bind(env);
+    }
+
+    let envs = query
         .fetch_all(pool)
         .await
         .map_err(|e| Error::new(ErrorKind::Other, e.to_string()))?;
@@ -49,7 +54,12 @@ pub async fn print(pool: &SqlitePool, env: Option<&str>) -> io::Result<()> {
 
 pub async fn print_raw(pool: &SqlitePool, env: Option<&str>) -> io::Result<()> {
     let sql = build_query(env);
-    let envs = sqlx::query_as::<_, EnvironmentRow>(&sql)
+    let mut query = sqlx::query_as::<_, EnvironmentRow>(&sql);
+    if let Some(env) = env {
+        query = query.bind(env);
+    }
+
+    let envs = query
         .fetch_all(pool)
         .await
         .map_err(|e| Error::new(ErrorKind::Other, e.to_string()))?;
