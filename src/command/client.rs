@@ -19,7 +19,6 @@ pub enum EnvelopeCmd {
 }
 
 impl EnvelopeCmd {
-    #[tokio::main(flavor = "current_thread")]
     pub async fn run(self) -> std::io::Result<()> {
         let db = db::init().await.unwrap();
 

@@ -25,12 +25,22 @@ static HELP_TEMPLATE: &str = "\
 )]
 struct Envelope {
     #[command(subcommand)]
-    envelope: EnvelopeCmd,
+    envelope: Option<EnvelopeCmd>,
 }
 
 impl Envelope {
-    fn run(self) -> std::io::Result<()> {
-        self.envelope.run()
+    #[tokio::main(flavor = "current_thread")]
+    async fn run(self) -> std::io::Result<()> {
+        match self.envelope {
+            Some(envelope) => {
+                envelope.run().await?;
+            },
+            None => {
+                ops::print_from_stdin().await?;
+            }
+        }
+
+        Ok(())
     }
 }
 
