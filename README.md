@@ -8,7 +8,8 @@ different configurations.
 
 ## Usage
 
-1. Pipe .env files to envelope to get a pretty format representation of the file
+### Pretty print
+Pipe .env files to envelope to get a pretty format representation of the file
 ```
 $ cat .env | envelope
 
@@ -29,7 +30,8 @@ $ cat .env | envelope
 +-------------------+----------------------------------------------+
 ```
 
-2. Import from .env file
+### Import
+Import from .env file
 ```
 $ envelope import dev .env
 $ envelope list
@@ -55,7 +57,8 @@ It's also possible to import directly from stdin
 $ cat .env | envelope import prod
 ```
 
-3. List env variables of a particular enviroment
+### List
+List env variables of a particular enviroment
 ```
 $ envelope list dev
 +-------------+-------------------+----------------------------------------------+
@@ -69,7 +72,8 @@ $ envelope list dev
 +-------------+-------------------+----------------------------------------------+
 ```
 
-4. Create a .env file with variables of a specific enviroment
+### Export
+Create a .env file with variables of a specific enviroment
 ```
 $ envelope export prod
 ```
@@ -85,7 +89,8 @@ You can also output to a specific file with the `-o` flag:
 $ envelope export prod -o .env.prod
 ```
 
-5. Add env variables
+### Add
+Add env variables
 ```
 $ envelope add local DB_CONNECTION https://example.com
 $ envelope list local
@@ -96,7 +101,8 @@ $ envelope list local
 +-------------+-------------------+-----------------------+
 ```
 
-6. Delete entire environments from envelope
+### Delete
+Delete entire environments from envelope
 ```
 $ envelope delete dev
 $ envelope list dev
