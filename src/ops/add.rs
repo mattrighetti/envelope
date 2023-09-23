@@ -51,7 +51,7 @@ pub async fn import_from_file(pool: &SqlitePool, env: &str, path: &str) -> io::R
 }
 
 pub async fn import_from_stdin(pool: &SqlitePool, env: &str) -> io::Result<()> {
-    let buf = io::BufReader::new(std::io::stdin());
+    let buf = io::BufReader::new(io::stdin());
     for line in buf.lines() {
         if line.is_err() {
             continue

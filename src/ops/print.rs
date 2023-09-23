@@ -32,7 +32,7 @@ pub async fn print_from_stdin() -> io::Result<()> {
     let mut table = Table::new();
     table.add_row(row!["VARIABLE", "VALUE"]);
 
-    let buf = io::BufReader::new(std::io::stdin());
+    let buf = io::BufReader::new(io::stdin());
     for line in buf.lines() {
         if line.is_err() {
             continue
