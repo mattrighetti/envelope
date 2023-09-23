@@ -11,10 +11,19 @@ mod export;
 #[derive(Subcommand)]
 #[command(infer_subcommands = true)]
 pub enum EnvelopeCmd {
-    Import(import::Cmd),
+    /// Add environment variables
     Add(add::Cmd),
-    Delete(delete::Cmd),
+
+    /// List environment variables
     List(list::Cmd),
+
+    /// Import environment variables
+    Import(import::Cmd),
+
+    /// Delete environment variables
+    Delete(delete::Cmd),
+
+    /// Export environment variables
     Export(export::Cmd)
 }
 

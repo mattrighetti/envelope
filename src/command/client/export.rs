@@ -10,8 +10,10 @@ use crate::ops;
 
 #[derive(Parser)]
 pub struct Cmd {
+    /// Environment that you wish to export.
     env: String,
 
+    /// Custom output file path.
     #[arg(long, short)]
     output: Option<String>
 }

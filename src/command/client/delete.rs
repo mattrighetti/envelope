@@ -5,9 +5,11 @@ use crate::ops;
 
 #[derive(Parser)]
 pub struct Cmd {
+    /// Environment that you wish to delete
     #[arg(short, long)]
     env: Option<String>,
 
+    /// Environment variable name that you wish to delete.
     #[arg(short, long)]
     key: Option<String>
 }

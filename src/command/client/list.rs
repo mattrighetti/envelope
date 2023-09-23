@@ -5,8 +5,11 @@ use crate::ops;
 
 #[derive(Parser)]
 pub struct Cmd {
+    /// Environment that you wish to list.
+    /// If not provided, all environments will be listed.
     env: Option<String>,
 
+    /// List environment variables in non-tabular format.
     #[arg(long, short)]
     raw: bool
 }

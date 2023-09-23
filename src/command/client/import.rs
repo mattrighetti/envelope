@@ -5,7 +5,11 @@ use crate::ops;
 
 #[derive(Parser)]
 pub struct Cmd {
+    /// Environment that you wish to assign to the imported environment variables.
     env: String,
+
+    /// Path of the file from where you want to import environment variables.
+    /// Defaults to stdin if not provided.
     path: Option<String>,
 }
 

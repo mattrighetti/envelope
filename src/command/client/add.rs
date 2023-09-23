@@ -5,8 +5,13 @@ use crate::ops;
 
 #[derive(Parser)]
 pub struct Cmd {
+    /// Environment variable to which you wish to add an environment variable
     env: String,
+
+    /// Name of the environment variable
     key: String,
+
+    /// Value of the environment variable. Default to empty string if not provided.
     value: Option<String>
 }
 
