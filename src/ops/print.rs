@@ -11,7 +11,7 @@ fn build_query(env: Option<&str>) -> String {
     let mut query_builder: QueryBuilder<Sqlite> = QueryBuilder::new(
         r"SELECT env, key, value, created_at
         FROM environments
-        WHERE 1 = 1 "
+        WHERE value NOT NULL "
     );
 
     if env.is_some() {
