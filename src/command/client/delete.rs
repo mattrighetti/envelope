@@ -5,12 +5,27 @@ use crate::ops;
 
 #[derive(Parser)]
 pub struct Cmd {
-    env: String
+    #[arg(short, long)]
+    env: Option<String>,
+
+    #[arg(short, long)]
+    key: Option<String>
 }
 
 impl Cmd {
     pub async fn run(&self, db: &SqlitePool) -> std::io::Result<()> {
-        ops::delete_env(db, &self.env).await?;
+        match (&self.env, &self.key) {
+            (Some(e), Some(k)) => {
+                ops::delete_var_in_env(db, e, k).await?;
+            },
+            (None, Some(k)) => {
+                ops::delete_var_globally(db, k).await?;
+            },
+            (Some(e), None) => {
+                ops::delete_env(db, e).await?;
+            },
+            _ => {}
+        }
 
         Ok(())
     }
