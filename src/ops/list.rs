@@ -64,7 +64,7 @@ pub async fn print(pool: &SqlitePool, env: Option<&str>) -> io::Result<()> {
         .await
         .map_err(|e| Error::new(ErrorKind::Other, e.to_string()))?;
 
-    if envs.len() > 0 {
+    if !envs.is_empty() {
         let mut table = Table::new();
         table.add_row(row!["ENVIRONMENT", "VARIABLE", "VALUE"]);
 
