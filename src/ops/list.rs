@@ -7,27 +7,6 @@ use std::io;
 use std::io::{Error, ErrorKind, Write, BufRead};
 
 
-fn build_query(env: Option<&str>) -> String {
-    let mut query_builder: QueryBuilder<Sqlite> = QueryBuilder::new(
-        r"SELECT env, key, value, created_at
-        FROM environments
-        WHERE value NOT NULL "
-    );
-
-    if env.is_some() {
-        query_builder.push("AND env =");
-        query_builder.push_bind(env);
-    }
-
-    query_builder.push(
-        r"GROUP BY env, key
-        HAVING MAX(created_at)
-        ORDER BY env, key;"
-    );
-
-    query_builder.into_sql()
-}
-
 pub async fn print_from_stdin() -> io::Result<()> {
     let mut table = Table::new();
     table.add_row(row!["VARIABLE", "VALUE"]);
@@ -53,13 +32,23 @@ pub async fn print_from_stdin() -> io::Result<()> {
 }
 
 pub async fn print(pool: &SqlitePool, env: Option<&str>) -> io::Result<()> {
-    let sql = build_query(env);
-    let mut query = sqlx::query_as::<_, EnvironmentRow>(&sql);
-    if let Some(env) = env {
-        query = query.bind(env);
+    let mut query_builder: QueryBuilder<Sqlite> = QueryBuilder::new(
+        r"SELECT env, key, value, created_at
+        FROM environments
+        WHERE value NOT NULL "
+    );
+
+    if env.is_some() {
+        query_builder.push("AND env =").push_bind(env);
     }
 
-    let envs = query
+    query_builder.push(
+        r"GROUP BY env, key
+        HAVING MAX(created_at)
+        ORDER BY env, key;"
+    );
+
+    let envs: Vec<EnvironmentRow> = query_builder.build_query_as()
         .fetch_all(pool)
         .await
         .map_err(|e| Error::new(ErrorKind::Other, e.to_string()))?;
@@ -79,13 +68,23 @@ pub async fn print(pool: &SqlitePool, env: Option<&str>) -> io::Result<()> {
 }
 
 pub async fn print_raw(pool: &SqlitePool, env: Option<&str>) -> io::Result<()> {
-    let sql = build_query(env);
-    let mut query = sqlx::query_as::<_, EnvironmentRow>(&sql);
-    if let Some(env) = env {
-        query = query.bind(env);
+    let mut query_builder: QueryBuilder<Sqlite> = QueryBuilder::new(
+        r"SELECT env, key, value, created_at
+        FROM environments
+        WHERE value NOT NULL "
+    );
+
+    if env.is_some() {
+        query_builder.push("AND env =").push_bind(env);
     }
 
-    let envs = query
+    query_builder.push(
+        r"GROUP BY env, key
+        HAVING MAX(created_at)
+        ORDER BY env, key;"
+    );
+
+    let envs: Vec<EnvironmentRow> = query_builder.build_query_as()
         .fetch_all(pool)
         .await
         .map_err(|e| Error::new(ErrorKind::Other, e.to_string()))?;
