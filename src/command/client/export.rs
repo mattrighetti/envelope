@@ -1,7 +1,7 @@
-use std::io;
-use std::fs;
 use std::env;
+use std::fs;
 use std::fs::OpenOptions;
+use std::io;
 
 use clap::Parser;
 use sqlx::SqlitePool;
@@ -15,7 +15,7 @@ pub struct Cmd {
 
     /// Custom output file path.
     #[arg(long, short)]
-    output: Option<String>
+    output: Option<String>,
 }
 
 impl Cmd {

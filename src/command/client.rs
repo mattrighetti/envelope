@@ -3,10 +3,10 @@ use clap::Subcommand;
 use crate::db;
 
 mod add;
-mod list;
-mod import;
 mod delete;
 mod export;
+mod import;
+mod list;
 
 #[derive(Subcommand)]
 #[command(infer_subcommands = true)]
@@ -24,7 +24,7 @@ pub enum EnvelopeCmd {
     Delete(delete::Cmd),
 
     /// Export environment variables
-    Export(export::Cmd)
+    Export(export::Cmd),
 }
 
 impl EnvelopeCmd {
@@ -36,7 +36,7 @@ impl EnvelopeCmd {
             Self::List(list) => list.run(&db).await?,
             Self::Add(add) => add.run(&db).await?,
             Self::Import(import) => import.run(&db).await?,
-            Self::Export(export) => export.run(&db).await?
+            Self::Export(export) => export.run(&db).await?,
         }
 
         Ok(())

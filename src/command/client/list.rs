@@ -11,7 +11,7 @@ pub struct Cmd {
 
     /// List environment variables in non-tabular format.
     #[arg(long, short)]
-    raw: bool
+    raw: bool,
 }
 
 impl Cmd {

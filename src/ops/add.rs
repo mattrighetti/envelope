@@ -1,8 +1,8 @@
 use sqlx::SqlitePool;
-use super::read_lines;
-
 use std::io::{self, BufRead, Write};
 use std::io::{Error, ErrorKind};
+
+use super::read_lines;
 
 /// Adds a single key-value element to the database
 ///
@@ -28,12 +28,12 @@ pub async fn import_from_file(pool: &SqlitePool, env: &str, path: &str) -> io::R
     let buf = read_lines(path)?;
     for line in buf {
         if line.is_err() {
-            continue
+            continue;
         }
 
         if line.as_ref().unwrap().starts_with('#') {
             writeln!(io::stdout(), "skipping {}", line.unwrap())?;
-            continue
+            continue;
         }
 
         if let Some((k, v)) = line.unwrap().split_once('=') {
@@ -54,12 +54,12 @@ pub async fn import_from_stdin(pool: &SqlitePool, env: &str) -> io::Result<()> {
     let buf = io::BufReader::new(io::stdin());
     for line in buf.lines() {
         if line.is_err() {
-            continue
+            continue;
         }
 
         if line.as_ref().unwrap().starts_with('#') {
             writeln!(io::stdout(), "skipping {}", line.unwrap())?;
-            continue
+            continue;
         }
 
         if let Some((k, v)) = line.unwrap().split_once('=') {

@@ -1,11 +1,10 @@
-use sqlx::{SqlitePool, Sqlite, QueryBuilder};
 use crate::db::EnvironmentRow;
+use sqlx::{QueryBuilder, Sqlite, SqlitePool};
 
-use prettytable::{Table, row};
+use prettytable::{row, Table};
 
 use std::io;
-use std::io::{Error, ErrorKind, Write, BufRead};
-
+use std::io::{BufRead, Error, ErrorKind, Write};
 
 pub async fn print_from_stdin() -> io::Result<()> {
     let mut table = Table::new();
@@ -14,11 +13,11 @@ pub async fn print_from_stdin() -> io::Result<()> {
     let buf = io::BufReader::new(io::stdin());
     for line in buf.lines() {
         if line.is_err() {
-            continue
+            continue;
         }
 
         if line.as_ref().unwrap().starts_with('#') {
-            continue
+            continue;
         }
 
         if let Some((k, v)) = line.unwrap().split_once('=') {
@@ -31,11 +30,26 @@ pub async fn print_from_stdin() -> io::Result<()> {
     Ok(())
 }
 
-pub async fn print(pool: &SqlitePool, env: Option<&str>) -> io::Result<()> {
+struct EnvRows(Vec<EnvironmentRow>);
+
+impl From<EnvRows> for Table {
+    fn from(value: EnvRows) -> Self {
+        let mut table = Table::new();
+        table.set_titles(row!["ENVIRONMENT", "VARIABLE", "VALUE"]);
+
+        for env in value.0 {
+            table.add_row(row![Fy->&env.env, Frb->&env.key, Fb->&env.value]);
+        }
+
+        table
+    }
+}
+
+fn query_builder(env: Option<&str>) -> QueryBuilder<Sqlite> {
     let mut query_builder: QueryBuilder<Sqlite> = QueryBuilder::new(
         r"SELECT env, key, value, created_at
         FROM environments
-        WHERE value NOT NULL "
+        WHERE value NOT NULL ",
     );
 
     if env.is_some() {
@@ -45,46 +59,29 @@ pub async fn print(pool: &SqlitePool, env: Option<&str>) -> io::Result<()> {
     query_builder.push(
         r"GROUP BY env, key
         HAVING MAX(created_at)
-        ORDER BY env, key;"
+        ORDER BY env, key;",
     );
 
-    let envs: Vec<EnvironmentRow> = query_builder.build_query_as()
+    query_builder
+}
+
+pub async fn print(pool: &SqlitePool, env: Option<&str>) -> io::Result<()> {
+    let envs: Vec<EnvironmentRow> = query_builder(env)
+        .build_query_as()
         .fetch_all(pool)
         .await
         .map_err(|e| Error::new(ErrorKind::Other, e.to_string()))?;
 
     if !envs.is_empty() {
-        let mut table = Table::new();
-        table.add_row(row!["ENVIRONMENT", "VARIABLE", "VALUE"]);
-
-        for env in envs {
-            table.add_row(row![Fy->&env.env, Frb->&env.key, Fb->&env.value]);
-        }
-
-        table.printstd();
+        Table::from(EnvRows(envs)).printstd();
     }
 
     Ok(())
 }
 
 pub async fn print_raw(pool: &SqlitePool, env: Option<&str>) -> io::Result<()> {
-    let mut query_builder: QueryBuilder<Sqlite> = QueryBuilder::new(
-        r"SELECT env, key, value, created_at
-        FROM environments
-        WHERE value NOT NULL "
-    );
-
-    if env.is_some() {
-        query_builder.push("AND env =").push_bind(env);
-    }
-
-    query_builder.push(
-        r"GROUP BY env, key
-        HAVING MAX(created_at)
-        ORDER BY env, key;"
-    );
-
-    let envs: Vec<EnvironmentRow> = query_builder.build_query_as()
+    let envs: Vec<EnvironmentRow> = query_builder(env)
+        .build_query_as()
         .fetch_all(pool)
         .await
         .map_err(|e| Error::new(ErrorKind::Other, e.to_string()))?;

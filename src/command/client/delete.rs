@@ -11,7 +11,7 @@ pub struct Cmd {
 
     /// Environment variable name that you wish to delete.
     #[arg(short, long)]
-    key: Option<String>
+    key: Option<String>,
 }
 
 impl Cmd {
@@ -19,13 +19,13 @@ impl Cmd {
         match (&self.env, &self.key) {
             (Some(e), Some(k)) => {
                 ops::delete_var_in_env(db, e, k).await?;
-            },
+            }
             (None, Some(k)) => {
                 ops::delete_var_globally(db, k).await?;
-            },
+            }
             (Some(e), None) => {
                 ops::delete_env(db, e).await?;
-            },
+            }
             _ => {}
         }
 

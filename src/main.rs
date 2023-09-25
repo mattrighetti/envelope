@@ -1,6 +1,6 @@
+mod command;
 mod db;
 mod ops;
-mod command;
 
 use clap::Parser;
 use command::EnvelopeCmd;
@@ -35,7 +35,7 @@ impl Envelope {
         match self.envelope {
             Some(envelope) => {
                 envelope.run().await?;
-            },
+            }
             None => {
                 ops::print_from_stdin().await?;
             }

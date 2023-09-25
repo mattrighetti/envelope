@@ -1,5 +1,5 @@
-use std::env;
 use sqlx::SqlitePool;
+use std::env;
 
 pub(crate) type EnvelopeResult<T> = Result<T, Box<dyn std::error::Error>>;
 
@@ -8,7 +8,7 @@ pub struct EnvironmentRow {
     pub env: String,
     pub key: String,
     pub value: String,
-    pub created_at: i32
+    pub created_at: i32,
 }
 
 /// Checks if an `.envelope` file is present in the current directory,
@@ -17,10 +17,7 @@ pub struct EnvironmentRow {
 pub async fn init() -> EnvelopeResult<SqlitePool> {
     let envelope_fs = env::current_dir()?.join(".envelope");
 
-    let db_path = envelope_fs
-        .into_os_string()
-        .into_string()
-        .unwrap();
+    let db_path = envelope_fs.into_os_string().into_string().unwrap();
 
     let pool = sqlx::sqlite::SqlitePoolOptions::new()
         .max_connections(1)
@@ -28,9 +25,7 @@ pub async fn init() -> EnvelopeResult<SqlitePool> {
         .await
         .map_err(|err| format!("{}\nfile: {}", err, db_path))?;
 
-    sqlx::migrate!("./migrations")
-        .run(&pool)
-        .await?;
+    sqlx::migrate!("./migrations").run(&pool).await?;
 
     Ok(pool)
 }

@@ -12,14 +12,14 @@ pub struct Cmd {
     key: String,
 
     /// Value of the environment variable. Default to empty string if not provided.
-    value: Option<String>
+    value: Option<String>,
 }
 
 impl Cmd {
     pub async fn run(&self, db: &SqlitePool) -> std::io::Result<()> {
         let value = match &self.value {
             None => "",
-            Some(s) => s
+            Some(s) => s,
         };
 
         ops::add_var(db, &self.env, &self.key, value).await
