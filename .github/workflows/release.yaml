@@ -1,0 +1,56 @@
+name: Build Binary for Multiple Platforms
+
+on:
+  push:
+    branches:
+      - main  # Adjust the branch as needed
+
+jobs:
+  build:
+    name: Build for Multiple Platforms
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      # Install Rust for the build
+      - name: Setup Rust
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+          override: true
+
+      # Install cross compilation tools
+      - name: Install cross-compilation dependencies
+        run: |
+          rustup target add x86_64-unknown-linux-gnu
+          rustup target add arm-unknown-linux-gnueabihf
+          rustup target add aarch64-unknown-linux-gnu
+
+      # Build for x86-64
+      - name: Build for x86-64
+        run: cargo build --release --target x86_64-unknown-linux-gnu
+
+      # Build for ARM
+      - name: Build for ARM
+        run: cargo build --release --target arm-unknown-linux-gnueabihf
+
+      # Build for ARM64
+      - name: Build for ARM64
+        run: cargo build --release --target aarch64-unknown-linux-gnu
+
+      # Package the binaries
+      - name: Package Binaries
+        run: |
+          mkdir -p dist
+          cp target/x86_64-unknown-linux-gnu/release/envelope dist/envelope_x86_64
+          cp target/arm-unknown-linux-gnueabihf/release/envelope dist/envelope_arm
+          cp target/aarch64-unknown-linux-gnu/release/envelope dist/envelope_arm64
+
+      # Upload the binaries as artifacts
+      - name: Upload Artifacts
+        uses: actions/upload-artifact@v2
+        with:
+          name: envelope
+          path: dist/
