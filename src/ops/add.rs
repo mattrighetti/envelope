@@ -75,18 +75,3 @@ pub async fn import_from_stdin(pool: &SqlitePool, env: &str) -> io::Result<()> {
 
     Ok(())
 }
-
-pub async fn duplicate(pool: &SqlitePool, source: &str, target: &str) -> io::Result<()> {
-    sqlx::query(
-        r"INSERT INTO environments(env,key,value)
-        SELECT ?2, key, value
-        FROM environments WHERE env = ?1",
-    )
-    .bind(source)
-    .bind(target)
-    .execute(pool)
-    .await
-    .map_err(|e| Error::new(ErrorKind::Other, e.to_string()))?;
-
-    Ok(())
-}

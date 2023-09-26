@@ -1,10 +1,12 @@
 mod add;
 mod delete;
+mod duplicate;
 mod export;
 mod list;
 
 pub use add::*;
 pub use delete::*;
+pub use duplicate::*;
 pub use export::*;
 pub use list::*;
 
