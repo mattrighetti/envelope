@@ -4,20 +4,18 @@ mod ops;
 
 use clap::Parser;
 use command::EnvelopeCmd;
+use std::io::Write;
 
 const VERSION: &str = env!("CARGO_PKG_VERSION");
 
 static HELP_TEMPLATE: &str = "\
-{before-help}{name} {version}
-{author}
 {about}
 
-{usage-heading}
-  {usage}
+{usage-heading} {usage}
 
 {all-args}{after-help}";
 
-/// Self contained .env manager
+/// A self-contained .env manager
 #[derive(Parser)]
 #[command(
     author = "Mattia Righetti <matt95.righetti@gmail.com>",
@@ -46,5 +44,9 @@ impl Envelope {
 }
 
 fn main() -> std::io::Result<()> {
-    Envelope::parse().run()
+    if let Err(err) = Envelope::parse().run() {
+        writeln!(std::io::stdout(), "error: {}", err)?;
+    }
+
+    Ok(())
 }
