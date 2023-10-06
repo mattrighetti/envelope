@@ -32,7 +32,7 @@ impl Cmd {
         let mut value = String::new();
         match self.stdin {
             true => {
-                writeln!(std::io::stdout(), "Enter value for env {}: ", self.env)?;
+                writeln!(std::io::stdout(), "Enter value for env {}: ", self.key)?;
                 let stdin = std::io::stdin();
                 stdin.lock().read_line(&mut value)?;
             }
