@@ -16,10 +16,15 @@ pub struct Cmd {
 
 impl Cmd {
     pub async fn run(&self, db: &SqlitePool) -> std::io::Result<()> {
-        if self.raw {
-            ops::print_raw(db, self.env.as_deref()).await?;
-        } else {
-            ops::print(db, self.env.as_deref()).await?;
+        match &self.env {
+            None => ops::print_envs(db).await?,
+            Some(env) => {
+                if self.raw {
+                    ops::print_raw(db, &env).await?;
+                } else {
+                    ops::print(db, &env).await?;
+                }
+            }
         }
 
         Ok(())

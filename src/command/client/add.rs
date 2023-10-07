@@ -21,7 +21,7 @@ pub struct Cmd {
 }
 
 impl Cmd {
-    pub async fn run(&mut self, db: &SqlitePool) -> std::io::Result<()> {
+    pub async fn run(&self, db: &SqlitePool) -> std::io::Result<()> {
         if self.stdin && self.value.is_some() {
             return Err(Error::new(
                 ErrorKind::Other,
@@ -38,7 +38,7 @@ impl Cmd {
             }
             false => {
                 if self.value.is_some() {
-                    value = self.value.take().unwrap();
+                    value = self.value.clone().unwrap();
                 }
             }
         }

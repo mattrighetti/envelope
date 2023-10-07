@@ -11,6 +11,11 @@ pub struct EnvironmentRow {
     pub created_at: i32,
 }
 
+#[derive(Debug, Clone, sqlx::FromRow)]
+pub struct Environment {
+    pub env: String,
+}
+
 /// Checks if an `.envelope` file is present in the current directory,
 /// if it is nothing is done and an error in returned, otherwise a new envelope
 /// database will get created
