@@ -3,12 +3,14 @@ mod delete;
 mod duplicate;
 mod export;
 mod list;
+mod sync;
 
 pub use add::*;
 pub use delete::*;
 pub use duplicate::*;
 pub use export::*;
 pub use list::*;
+pub use sync::*;
 
 use std::fs::File;
 use std::io::{self, BufRead};

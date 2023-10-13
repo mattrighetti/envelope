@@ -34,3 +34,15 @@ pub async fn init() -> EnvelopeResult<SqlitePool> {
 
     Ok(pool)
 }
+
+#[cfg(test)]
+pub async fn test_db() -> SqlitePool {
+    let pool = sqlx::sqlite::SqlitePoolOptions::new()
+        .connect(":memory:")
+        .await
+        .expect("cannot connect to db");
+
+    sqlx::migrate!("./migrations").run(&pool).await.unwrap();
+
+    pool
+}
