@@ -27,7 +27,7 @@ impl Cmd {
             }
         };
 
-        ops::import(reader, db, &self.env).await?;
+        ops::import(reader, &mut io::stdout(), db, &self.env).await?;
 
         Ok(())
     }
