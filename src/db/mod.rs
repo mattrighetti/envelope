@@ -16,14 +16,21 @@ pub struct Environment {
     pub env: String,
 }
 
+pub fn is_present() -> bool {
+    if let Ok(current_dir) = env::current_dir() {
+        let envelope_fs = current_dir.join(".envelope");
+        return envelope_fs.is_file();
+    }
+
+    false
+}
+
 /// Checks if an `.envelope` file is present in the current directory,
 /// if it is nothing is done and an error in returned, otherwise a new envelope
 /// database will get created
 pub async fn init() -> EnvelopeResult<SqlitePool> {
     let envelope_fs = env::current_dir()?.join(".envelope");
-
     let db_path = envelope_fs.into_os_string().into_string().unwrap();
-
     let pool = sqlx::sqlite::SqlitePoolOptions::new()
         .max_connections(1)
         .connect(&format!("sqlite://{}?mode=rwc", db_path))
