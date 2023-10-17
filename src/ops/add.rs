@@ -32,12 +32,13 @@ pub async fn import<W: Write, R: BufRead>(
             continue;
         }
 
-        if line.as_ref().unwrap().starts_with('#') {
-            writeln!(writer, "skipping {}", line.unwrap())?;
+        let line = line.unwrap();
+        if line.starts_with('#') {
+            writeln!(writer, "skipping {}", line)?;
             continue;
         }
 
-        if let Some((k, v)) = line.unwrap().split_once('=') {
+        if let Some((k, v)) = line.split_once('=') {
             sqlx::query("INSERT INTO environments(env,key,value) VALUES (?, upper(?), ?);")
                 .bind(env)
                 .bind(k)
@@ -45,6 +46,8 @@ pub async fn import<W: Write, R: BufRead>(
                 .execute(pool)
                 .await
                 .map_err(|e| Error::new(ErrorKind::Other, e.to_string()))?;
+        } else {
+            writeln!(writer, "invalid {}, skipping", line)?;
         }
     }
 
@@ -112,5 +115,36 @@ mod tests {
 
         let output = String::from_utf8(output).unwrap();
         assert_eq!("skipping # key1=value1\n", output.as_str());
+    }
+
+    #[tokio::test]
+    async fn test_mul_import() {
+        let pool = test_db().await;
+        let mut output: Vec<u8> = Vec::new();
+
+        let res = import(
+            stdin_input("#k=v\n#invalid-value\nkey value\nkey1=val1\nkey2=val2"),
+            &mut output,
+            &pool,
+            "prod",
+        )
+        .await;
+
+        assert!(res.is_ok());
+
+        let rows = sqlx::query_as::<_, EnvironmentRow>(
+            "SELECT * FROM environments WHERE env = 'prod' ORDER BY key",
+        )
+        .fetch_all(&pool)
+        .await
+        .unwrap();
+
+        assert_eq!(2, rows.len());
+
+        let output = String::from_utf8(output).unwrap();
+        assert_eq!(
+            "skipping #k=v\nskipping #invalid-value\ninvalid key value, skipping\n",
+            output
+        );
     }
 }
