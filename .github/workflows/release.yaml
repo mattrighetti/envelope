@@ -86,26 +86,27 @@ jobs:
           echo "target dir is: ${{ env.TARGET_DIR }}"
 
       - name: Build release binary
-        run: ${{ env.CARGO }} build --version --release ${{ env.TARGET_FLAGS }}
+        run: ${{ env.CARGO }} build --verbose --release ${{ env.TARGET_FLAGS }}
 
       - name: Strip release binary (linux, macos and macos-arm)
-        if: matrix.os == 'linux' || matrix.os == 'macos'
-        run: strip "target/${{ metrix.target }}/release/envelope"
+        if: matrix.build == 'linux' || matrix.build == 'macos'
+        run: strip "target/${{ matrix.target }}/release/envelope"
 
-      - name: Strip release binary (linux-arm)
+      - name: Strip release binary (arm)
         if: matrix.build == 'linux-arm'
         run: |
           docker run --rm -v \
             "$PWD/target:/target:Z" \
             rustembedded/cross:arm-unknown-linux-gnueabihf \
             arm-linux-gnueabihf-strip \
-            /target/arm-unknown-linux-gnueabihf/release/rg
+            /target/arm-unknown-linux-gnueabihf/release/envelope
 
       - name: Build archive
         shell: bash
         run: |
           staging="envelope-${{ needs.create-release.outputs.evl_version }}-${{ matrix.target }}"
-          cp {README.md} "$staging/"
+          mkdir -p "$staging"
+          cp README.md "$staging/"
           cp "target/${{ matrix.target }}/release/envelope" "$staging/"
 
           tar czf "$staging.tar.gz" "$staging"
