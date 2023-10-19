@@ -1,0 +1,23 @@
+from_latest_tag = false
+ignore_merge_commits = false
+generate_mono_repository_global_tag = true
+branch_whitelist = []
+skip_untracked = false
+pre_bump_hooks = [
+    "sed -i -E 's/^version.*$/version = \"{{version}}\"/' Cargo.toml"
+]
+post_bump_hooks = []
+pre_package_bump_hooks = []
+post_package_bump_hooks = []
+
+[git_hooks]
+
+[commit_types]
+
+[changelog]
+path = "CHANGELOG.md"
+authors = []
+
+[bump_profiles]
+
+[packages]
