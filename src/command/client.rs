@@ -1,4 +1,5 @@
 use clap::Subcommand;
+use std::io::{Error, ErrorKind};
 
 use crate::db;
 
@@ -13,6 +14,9 @@ mod sync;
 #[derive(Subcommand)]
 #[command(infer_subcommands = true)]
 pub enum EnvelopeCmd {
+    /// Initialize envelope
+    Init,
+
     /// Add environment variables
     Add(add::Cmd),
 
@@ -37,6 +41,10 @@ pub enum EnvelopeCmd {
 
 impl EnvelopeCmd {
     pub async fn run(self) -> std::io::Result<()> {
+        if !db::is_present() && !matches!(self, Self::Init) {
+            return Err(Error::new(ErrorKind::Other, "envelope is not initialized"));
+        }
+
         let db = db::init().await.unwrap();
 
         match self {
@@ -47,6 +55,7 @@ impl EnvelopeCmd {
             Self::Export(export) => export.run(&db).await?,
             Self::Duplicate(duplicate) => duplicate.run(&db).await?,
             Self::Sync(sync) => sync.run(&db).await?,
+            _ => {}
         }
 
         Ok(())

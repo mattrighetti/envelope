@@ -61,7 +61,7 @@ fn query_builder(env: &str) -> QueryBuilder<Sqlite> {
     query_builder
 }
 
-pub async fn print(pool: &SqlitePool, env: &str) -> io::Result<()> {
+pub async fn list(pool: &SqlitePool, env: &str) -> io::Result<()> {
     let envs: Vec<EnvironmentRow> = query_builder(env)
         .build_query_as()
         .fetch_all(pool)
@@ -75,7 +75,7 @@ pub async fn print(pool: &SqlitePool, env: &str) -> io::Result<()> {
     Ok(())
 }
 
-pub async fn print_raw(pool: &SqlitePool, env: &str) -> io::Result<()> {
+pub async fn list_raw<W: Write>(writer: &mut W, pool: &SqlitePool, env: &str) -> io::Result<()> {
     let envs: Vec<EnvironmentRow> = query_builder(env)
         .build_query_as()
         .fetch_all(pool)
@@ -83,13 +83,13 @@ pub async fn print_raw(pool: &SqlitePool, env: &str) -> io::Result<()> {
         .map_err(|e| Error::new(ErrorKind::Other, e.to_string()))?;
 
     for env in envs {
-        writeln!(io::stdout(), "{}={}", &env.key, &env.value)?;
+        writeln!(writer, "{}={}", &env.key, &env.value)?;
     }
 
     Ok(())
 }
 
-pub async fn print_envs(pool: &SqlitePool) -> io::Result<()> {
+pub async fn list_envs<W: Write>(writer: &mut W, pool: &SqlitePool) -> io::Result<()> {
     let envs: Vec<Environment> =
         sqlx::query_as::<_, Environment>("SELECT DISTINCT(env) FROM environments")
             .fetch_all(pool)
@@ -97,7 +97,7 @@ pub async fn print_envs(pool: &SqlitePool) -> io::Result<()> {
             .map_err(|e| Error::new(ErrorKind::Other, e.to_string()))?;
 
     for env in envs {
-        writeln!(io::stdout(), "{}", &env.env)?;
+        writeln!(writer, "{}", &env.env)?;
     }
 
     Ok(())

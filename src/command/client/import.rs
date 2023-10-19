@@ -1,3 +1,7 @@
+use std::fs::File;
+use std::io;
+use std::io::{BufRead, BufReader};
+
 use clap::Parser;
 use sqlx::SqlitePool;
 
@@ -15,10 +19,15 @@ pub struct Cmd {
 
 impl Cmd {
     pub async fn run(&self, db: &SqlitePool) -> std::io::Result<()> {
-        match &self.path {
-            Some(path) => ops::import_from_file(db, &self.env, path).await?,
-            None => ops::import_from_stdin(db, &self.env).await?,
-        }
+        let reader: Box<dyn BufRead> = match &self.path {
+            None => Box::new(BufReader::new(io::stdin())),
+            Some(path) => {
+                let f = File::open(path)?;
+                Box::new(BufReader::new(f))
+            }
+        };
+
+        ops::import(reader, &mut io::stdout(), db, &self.env).await?;
 
         Ok(())
     }

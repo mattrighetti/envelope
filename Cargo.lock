@@ -369,7 +369,7 @@ checksum = "34aa73646ffb006b8f5147f3dc182bd4bcb190227ce861fc4a4844bf8e3cb2c0"
 
 [[package]]
 name = "envelope"
-version = "0.1.6"
+version = "0.1.7"
 dependencies = [
  "clap",
  "prettytable-rs",
@@ -748,6 +748,17 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "e7810e0be55b428ada41041c41f32c9f1a42817901b4ccf45fa3d4b6561e74c7"
 dependencies = [
  "adler",
+]
+
+[[package]]
+name = "mio"
+version = "0.8.8"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "927a765cd3fc26206e66b296465fa9d3e5ab003e651c1b3c060e7956d96b19d2"
+dependencies = [
+ "libc",
+ "wasi",
+ "windows-sys",
 ]
 
 [[package]]
@@ -1161,6 +1172,16 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "942b4a808e05215192e39f4ab80813e599068285906cc91aa64f923db842bd5a"
 
 [[package]]
+name = "socket2"
+version = "0.5.4"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "4031e820eb552adee9295814c0ced9e5cf38ddf1e8b7d566d6de8e2538ea989e"
+dependencies = [
+ "libc",
+ "windows-sys",
+]
+
+[[package]]
 name = "spin"
 version = "0.5.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1243,6 +1264,8 @@ dependencies = [
  "smallvec",
  "sqlformat",
  "thiserror",
+ "tokio",
+ "tokio-stream",
  "tracing",
  "url",
 ]
@@ -1281,6 +1304,7 @@ dependencies = [
  "sqlx-sqlite",
  "syn 1.0.109",
  "tempfile",
+ "tokio",
  "url",
 ]
 
@@ -1498,8 +1522,13 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "17ed6077ed6cd6c74735e21f37eb16dc3935f96878b1fe961074089cc80893f9"
 dependencies = [
  "backtrace",
+ "bytes",
+ "libc",
+ "mio",
  "pin-project-lite",
+ "socket2",
  "tokio-macros",
+ "windows-sys",
 ]
 
 [[package]]
@@ -1511,6 +1540,17 @@ dependencies = [
  "proc-macro2",
  "quote",
  "syn 2.0.37",
+]
+
+[[package]]
+name = "tokio-stream"
+version = "0.1.14"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "397c988d37662c7dda6d2208364a706264bf3d6138b11d436cbac0ad38832842"
+dependencies = [
+ "futures-core",
+ "pin-project-lite",
+ "tokio",
 ]
 
 [[package]]

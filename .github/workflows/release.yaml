@@ -3,63 +3,117 @@ name: Build Binary for Multiple Platforms
 on:
   push:
     tags:
-      - "*.*.*"
+      - "[0-9]+.[0-9]+.[0-9]+"
 
 permissions:
   contents: write
 
 jobs:
-  build:
-    name: Build for Multiple Platforms
+  create-release:
+    name: create-release
+    runs-on: ubuntu-latest
+
+    outputs:
+      evl_version: ${{ env.EVL_VERSION }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Get release version from tag
+        shell: bash
+        if: env.EVL_VERSION == ''
+        run: |
+          echo "EVL_VERSION=$GITHUB_REF_NAME" >> $GITHUB_ENV
+          echo "version is: ${{ env.EVL_VERSION }}"
+
+      - name: Create GitHub release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh release create ${{ env.EVL_VERSION }}
+
+  build-release:
+    name: build-release
+    needs: ['create-release']
     runs-on: ${{ matrix.os }}
+    env:
+      CARGO: cargo
+      TARGET_FLAGS: ""
+      TARGET_DIR: ./target
+      RUST_BACKTRACE: 1
 
     strategy:
       matrix:
+        build: [linux, linux-arm, macos]
         include:
-          - build: x86_64
+          - build: linux
             os: ubuntu-latest
-            architecture: x86_64
-            target: x86_64-unknown-linux-gnu
-
-          - build: arm
+            rust: nightly
+            target: x86_64-unknown-linux-musl
+          - build: linux-arm
             os: ubuntu-latest
-            architecture: arm
+            rust: nightly
             target: arm-unknown-linux-gnueabihf
-
-          - build: arm64
-            os: ubuntu-latest
-            architecture: aarch64
-            target: aarch64-unknown-linux-gnu
+          - build: macos
+            os: macos-latest
+            rust: nightly
+            target: x86_64-apple-darwin
 
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v3
+      - name: Checkout repository
+        uses: actions/checkout@v4
 
-      # Install Rust for the build
-      - name: Setup Rust
-        uses: actions-rs/toolchain@v1
+      - name: Install pkgs (Ubuntu)
+        if: matrix.os == 'ubuntu-latest'
+        run: |
+          ci/ubuntu-install-packages
+
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@master
         with:
-          toolchain: stable
+          toolchain: ${{ matrix.rust }}
           target: ${{ matrix.target }}
-          override: true
 
-      - uses: Swatinem/rust-cache@v2
-        with:
-          save-if: ${{ github.ref == 'refs/heads/master' }}
+      - name: Use Cross
+        shell: bash
+        run: |
+          cargo install cross
+          echo "CARGO=cross" >> $GITHUB_ENV
+          echo "TARGET_FLAGS=--target ${{ matrix.target }}" >> $GITHUB_ENV
+          echo "TARGET_DIR=./target/${{ matrix.target }}" >> $GITHUB_ENV
 
-      - uses: actions-rs/cargo@v1
-        with:
-          use-cross: true
-          command: build
-          args: --release --target=${{ matrix.target }}
+      - name: Show command used for cargo
+        run: |
+          echo "cargo command is: ${{ env.CARGO }}"
+          echo "target flag is: ${{ env.TARGET_FLAGS }}"
+          echo "target dir is: ${{ env.TARGET_DIR }}"
 
-      - name: File
-        run: file target/${{ matrix.target }}/release/envelope
+      - name: Build release binary
+        run: ${{ env.CARGO }} build --version --release ${{ env.TARGET_FLAGS }}
 
-      - name: Rename
-        run: mv target/${{ matrix.target }}/release/envelope target/${{ matrix.target }}/release/envelope-${{ matrix.architecture }}
+      - name: Strip release binary (linux, macos and macos-arm)
+        if: matrix.os == 'linux' || matrix.os == 'macos'
+        run: strip "target/${{ metrix.target }}/release/envelope"
 
-      - uses: softprops/action-gh-release@v1
-        if: startsWith(github.ref, 'refs/tags/')
-        with:
-          files: target/${{ matrix.target }}/release/envelope-${{ matrix.architecture }}
+      - name: Strip release binary (linux-arm)
+        if: matrix.build == 'linux-arm'
+        run: |
+          docker run --rm -v \
+            "$PWD/target:/target:Z" \
+            rustembedded/cross:arm-unknown-linux-gnueabihf \
+            arm-linux-gnueabihf-strip \
+            /target/arm-unknown-linux-gnueabihf/release/rg
+
+      - name: Build archive
+        shell: bash
+        run: |
+          staging="envelope-${{ needs.create-release.outputs.evl_version }}-${{ matrix.target }}"
+          cp {README.md} "$staging/"
+          cp "target/${{ matrix.target }}/release/envelope" "$staging/"
+
+          tar czf "$staging.tar.gz" "$staging"
+          shasum -a 256 "$staging.tar.gz" > "$staging.tar.gz.sha256"
+          echo "ASSET=$staging.tar.gz" >> $GITHUB_ENV
+          echo "ASSET_SUM=$staging.tar.gz.sha256" >> $GITHUB_ENV
+
+      - name: Upload release archive
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh release upload ${{ needs.create-release.outputs.evl_version }} ${{ env.ASSET }} ${{ env.ASSET_SUM }}
