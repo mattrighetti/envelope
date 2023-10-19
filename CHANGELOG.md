@@ -2,6 +2,25 @@
 All notable changes to this project will be documented in this file. See [conventional commits](https://www.conventionalcommits.org/) for commit guidelines.
 
 - - -
+## 0.1.8 - 2023-10-19
+#### Bug Fixes
+- release pipeline - (09b526d) - Mattia Righetti
+#### Continuous Integration
+- update ci - (416b8f2) - Mattia Righetti
+- matrix build pipeline - (891b58a) - Mattia Righetti
+#### Features
+- **(init)** init cmd - (e626405) - Mattia Righetti
+#### Miscellaneous Chores
+- update cog.toml - (d749e4f) - Mattia Righetti
+#### Refactoring
+- renamed print methods - (d92e160) - Mattia Righetti
+- take Write in import - (2395ea6) - Mattia Righetti
+- new import function with reader arg - (ddc41fe) - Mattia Righetti
+#### Tests
+- more import tests - (e89c10f) - Mattia Righetti
+
+- - -
+
 ## 0.1.7 - 2023-10-14
 #### Bug Fixes
 - **(duplicate)** duplicate only latest values and not entire history - (4db7ca0) - Mattia Righetti
