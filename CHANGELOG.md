@@ -2,6 +2,14 @@
 All notable changes to this project will be documented in this file. See [conventional commits](https://www.conventionalcommits.org/) for commit guidelines.
 
 - - -
+## 0.1.9 - 2023-10-24
+#### Features
+- **(list)** impl truncate feature for list - (21a627d) - Mattia Righetti
+#### Miscellaneous Chores
+- Cargo.lock bump - (4f54d36) - Mattia Righetti
+
+- - -
+
 ## 0.1.8 - 2023-10-19
 #### Bug Fixes
 - release pipeline - (09b526d) - Mattia Righetti
