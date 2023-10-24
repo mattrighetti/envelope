@@ -13,6 +13,9 @@ pub struct Cmd {
     /// List environment variables in non-tabular format.
     #[arg(long, short)]
     raw: bool,
+
+    #[arg(long, short)]
+    truncate: bool,
 }
 
 impl Cmd {
@@ -23,7 +26,11 @@ impl Cmd {
                 if self.raw {
                     ops::list_raw(&mut io::stdout(), db, env).await?;
                 } else {
-                    ops::list(db, env).await?;
+                    let truncate = match self.truncate {
+                        true => ops::Truncate::Range(0, 60),
+                        false => ops::Truncate::None,
+                    };
+                    ops::list(db, env, truncate).await?;
                 }
             }
         }
