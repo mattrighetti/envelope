@@ -45,9 +45,23 @@ impl From<EnvRows> for Table {
     }
 }
 
-fn query_builder(env: &str) -> QueryBuilder<Sqlite> {
-    let mut query_builder: QueryBuilder<Sqlite> = QueryBuilder::new(
-        r"SELECT env, key, value, created_at
+pub enum Truncate {
+    None,
+    Range(u32, u32),
+}
+
+fn query_builder(env: &str, truncate: Truncate) -> QueryBuilder<Sqlite> {
+    let mut query_builder: QueryBuilder<Sqlite> = QueryBuilder::new(r"SELECT env, key, ");
+
+    match truncate {
+        Truncate::None => query_builder.push("value"),
+        Truncate::Range(x, y) => {
+            query_builder.push(format!("substr(value, {}, {}) as value", x, y))
+        }
+    };
+
+    query_builder.push(
+        r", created_at
         FROM environments
         WHERE value NOT NULL ",
     );
@@ -61,8 +75,8 @@ fn query_builder(env: &str) -> QueryBuilder<Sqlite> {
     query_builder
 }
 
-pub async fn list(pool: &SqlitePool, env: &str) -> io::Result<()> {
-    let envs: Vec<EnvironmentRow> = query_builder(env)
+pub async fn list(pool: &SqlitePool, env: &str, truncate: Truncate) -> io::Result<()> {
+    let envs: Vec<EnvironmentRow> = query_builder(env, truncate)
         .build_query_as()
         .fetch_all(pool)
         .await
@@ -76,7 +90,7 @@ pub async fn list(pool: &SqlitePool, env: &str) -> io::Result<()> {
 }
 
 pub async fn list_raw<W: Write>(writer: &mut W, pool: &SqlitePool, env: &str) -> io::Result<()> {
-    let envs: Vec<EnvironmentRow> = query_builder(env)
+    let envs: Vec<EnvironmentRow> = query_builder(env, Truncate::None)
         .build_query_as()
         .fetch_all(pool)
         .await
