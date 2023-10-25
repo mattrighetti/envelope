@@ -27,7 +27,8 @@ jobs:
       - name: Create GitHub release
         env:
           GH_TOKEN: ${{ github.token }}
-        run: gh release create ${{ env.EVL_VERSION }}
+        run: |
+          ci/create_release ${{ env.EVL_VERSION }}
 
   build-release:
     name: build-release
@@ -106,7 +107,7 @@ jobs:
         run: |
           staging="envelope-${{ needs.create-release.outputs.evl_version }}-${{ matrix.target }}"
           mkdir -p "$staging"
-          cp README.md "$staging/"
+          cp {README.md, CHANGELOG.md} "$staging/"
           cp "target/${{ matrix.target }}/release/envelope" "$staging/"
 
           tar czf "$staging.tar.gz" "$staging"
