@@ -2,6 +2,17 @@
 All notable changes to this project will be documented in this file. See [conventional commits](https://www.conventionalcommits.org/) for commit guidelines.
 
 - - -
+## 0.2.0 - 2023-10-26
+#### Continuous Integration
+- add checks on PR - (cf5b217) - Mattia Righetti
+- add changelog to release notes - (4fa88a2) - Mattia Righetti
+#### Features
+- **(drop)** impl drop command to delete environments - (675182b) - Mattia Righetti
+#### Miscellaneous Chores
+- update cog config - (dc0c299) - Mattia Righetti
+
+- - -
+
 ## 0.1.9 - 2023-10-24
 #### Features
 - **(list)** impl truncate feature for list - (21a627d) - Mattia Righetti
