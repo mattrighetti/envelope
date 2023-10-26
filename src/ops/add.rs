@@ -55,7 +55,7 @@ pub async fn import<W: Write, R: BufRead>(
 }
 
 #[cfg(test)]
-mod tests {
+mod test {
     use super::*;
     use crate::db::{test_db, EnvironmentRow};
     use std::io::BufReader;

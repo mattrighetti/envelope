@@ -5,6 +5,7 @@ use crate::db;
 
 mod add;
 mod delete;
+mod drop;
 mod duplicate;
 mod export;
 mod import;
@@ -35,6 +36,9 @@ pub enum EnvelopeCmd {
     /// Duplicate environments
     Duplicate(duplicate::Cmd),
 
+    /// Drop environment
+    Drop(drop::Cmd),
+
     /// Syncs environments
     Sync(sync::Cmd),
 }
@@ -54,6 +58,7 @@ impl EnvelopeCmd {
             Self::Import(import) => import.run(&db).await?,
             Self::Export(export) => export.run(&db).await?,
             Self::Duplicate(duplicate) => duplicate.run(&db).await?,
+            Self::Drop(drop) => drop.run(&db).await?,
             Self::Sync(sync) => sync.run(&db).await?,
             _ => {}
         }
