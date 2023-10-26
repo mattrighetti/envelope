@@ -1,10 +1,10 @@
-#!/bin/sh
+#!/bin/bash
 
 set -e
 
 URL="https://github.com/mattrighetti/envelope/blob/master/CHANGELOG.md"
 TAG="$(git tag --points-at HEAD)"
-REF="${TAG//.}---$(git show -s --format=%cd --date=short)"
+REF="${TAG//./}---$(git show -s --format=%cd --date=short)"
 CHANGELOG_REF="${URL}#${REF}"
 NOTES="[CHANGELOG](${CHANGELOG_REF})"
 

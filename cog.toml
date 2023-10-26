@@ -4,7 +4,8 @@ generate_mono_repository_global_tag = true
 branch_whitelist = []
 skip_untracked = false
 pre_bump_hooks = [
-    "sed -i -E 's/^version.*$/version = \"{{version}}\"/' Cargo.toml"
+    "sed -i -E 's/^version.*$/version = \"{{version}}\"/' Cargo.toml",
+    "cargo check",
 ]
 post_bump_hooks = []
 pre_package_bump_hooks = []
