@@ -1,7 +1,7 @@
 use clap::Subcommand;
 use std::io::{Error, ErrorKind};
 
-use crate::db;
+use crate::{db, ops};
 
 mod add;
 mod delete;
@@ -20,6 +20,9 @@ pub enum EnvelopeCmd {
 
     /// Add environment variables
     Add(add::Cmd),
+
+    /// Check which environment is currently exported
+    Check,
 
     /// List environment variables
     List(list::Cmd),
@@ -60,6 +63,7 @@ impl EnvelopeCmd {
             Self::Duplicate(duplicate) => duplicate.run(&db).await?,
             Self::Drop(drop) => drop.run(&db).await?,
             Self::Sync(sync) => sync.run(&db).await?,
+            Self::Check => ops::check(&mut std::io::stdout(), &db).await?,
             _ => {}
         }
 
