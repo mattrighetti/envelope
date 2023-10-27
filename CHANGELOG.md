@@ -2,6 +2,12 @@
 All notable changes to this project will be documented in this file. See [conventional commits](https://www.conventionalcommits.org/) for commit guidelines.
 
 - - -
+## 0.3.0 - 2023-10-27
+#### Features
+- **(check)** impl check command - (fede849) - Mattia Righetti
+
+- - -
+
 ## 0.2.0 - 2023-10-26
 #### Continuous Integration
 - add checks on PR - (cf5b217) - Mattia Righetti
