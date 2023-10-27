@@ -1,4 +1,5 @@
 mod add;
+mod check;
 mod delete;
 mod drop;
 mod duplicate;
@@ -7,6 +8,7 @@ mod list;
 mod sync;
 
 pub use add::*;
+pub use check::*;
 pub use delete::*;
 pub use drop::*;
 pub use duplicate::*;
