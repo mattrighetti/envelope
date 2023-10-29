@@ -12,9 +12,8 @@ pub struct Cmd {
     /// If not provided, all environments will be listed.
     env: Option<String>,
 
-    /// List environment variables in non-tabular format.
     #[arg(long, short)]
-    raw: bool,
+    pretty_print: bool,
 
     #[arg(long, short)]
     truncate: bool,
@@ -25,7 +24,7 @@ impl Cmd {
         match &self.env {
             None => ops::list_envs(&mut io::stdout(), db).await?,
             Some(env) => {
-                if self.raw {
+                if !self.pretty_print {
                     ops::list_raw(&mut io::stdout(), db, env).await?;
                 } else {
                     let truncate = match self.truncate {
