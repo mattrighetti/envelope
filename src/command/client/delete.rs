@@ -1,5 +1,6 @@
 use clap::Parser;
 use sqlx::SqlitePool;
+use std::io::Result;
 
 use crate::ops;
 
@@ -15,7 +16,7 @@ pub struct Cmd {
 }
 
 impl Cmd {
-    pub async fn run(&self, db: &SqlitePool) -> std::io::Result<()> {
+    pub async fn run(&self, db: &SqlitePool) -> Result<()> {
         match (&self.env, &self.key) {
             (Some(e), Some(k)) => {
                 ops::delete_var_in_env(db, e, k).await?;

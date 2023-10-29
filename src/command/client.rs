@@ -1,5 +1,5 @@
 use clap::Subcommand;
-use std::io::{Error, ErrorKind};
+use std::io::{Error, ErrorKind, Result};
 
 use crate::{db, ops};
 
@@ -47,7 +47,7 @@ pub enum EnvelopeCmd {
 }
 
 impl EnvelopeCmd {
-    pub async fn run(self) -> std::io::Result<()> {
+    pub async fn run(self) -> Result<()> {
         if !db::is_present() && !matches!(self, Self::Init) {
             return Err(Error::new(ErrorKind::Other, "envelope is not initialized"));
         }

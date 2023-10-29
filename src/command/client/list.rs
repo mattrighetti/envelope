@@ -1,6 +1,7 @@
 use clap::Parser;
 use sqlx::SqlitePool;
 use std::io;
+use std::io::Result;
 
 use crate::ops;
 
@@ -19,7 +20,7 @@ pub struct Cmd {
 }
 
 impl Cmd {
-    pub async fn run(&self, db: &SqlitePool) -> io::Result<()> {
+    pub async fn run(&self, db: &SqlitePool) -> Result<()> {
         match &self.env {
             None => ops::list_envs(&mut io::stdout(), db).await?,
             Some(env) => {

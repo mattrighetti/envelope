@@ -1,5 +1,4 @@
-use std::io;
-use std::io::{Error, ErrorKind};
+use std::io::{Error, ErrorKind, Result};
 
 use sqlx::{QueryBuilder, Sqlite, SqlitePool};
 
@@ -20,12 +19,7 @@ fn query_builder(overwrite: &bool) -> QueryBuilder<Sqlite> {
 
 /// Syncs copies variables src_env and adds them to target_env
 /// only if they are not already present
-pub async fn sync(
-    db: &SqlitePool,
-    src_env: &str,
-    target_env: &str,
-    overwrite: bool,
-) -> io::Result<()> {
+pub async fn sync(db: &SqlitePool, src_env: &str, target_env: &str, overwrite: bool) -> Result<()> {
     query_builder(&overwrite)
         .build()
         .bind(src_env)

@@ -1,6 +1,6 @@
 use clap::Parser;
 use sqlx::SqlitePool;
-use std::io::{BufRead, Error, ErrorKind, Write};
+use std::io::{BufRead, Error, ErrorKind, Result, Write};
 
 use crate::ops;
 
@@ -21,7 +21,7 @@ pub struct Cmd {
 }
 
 impl Cmd {
-    pub async fn run(&self, db: &SqlitePool) -> std::io::Result<()> {
+    pub async fn run(&self, db: &SqlitePool) -> Result<()> {
         if self.stdin && self.value.is_some() {
             return Err(Error::new(
                 ErrorKind::Other,
