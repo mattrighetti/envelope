@@ -24,6 +24,13 @@ Options:
   -V, --version  Print version
 ```
 
+## Install
+envelope can be built from source or with Homebrew
+```sh
+$ brew tap mattrighetti/envelope
+$ brew install envelope
+```
+
 ## How it works
 envelope is basically a command line utility that leverages an SQLite database
 to keep track of your enviroment variables so that you can easily switch between
