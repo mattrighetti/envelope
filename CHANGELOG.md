@@ -2,6 +2,20 @@
 All notable changes to this project will be documented in this file. See [conventional commits](https://www.conventionalcommits.org/) for commit guidelines.
 
 - - -
+## 0.3.1 - 2023-10-29
+#### Bug Fixes
+- exit with status code 1 if err occurs - (2069f1f) - Mattia Righetti
+#### Documentation
+- add man page - (1f06bb1) - Mattia Righetti
+#### Miscellaneous Chores
+- add more stuff to man page - (076a6f8) - Mattia Righetti
+#### Refactoring
+- default list to raw - (48495b7) - Mattia Righetti
+- move subcommand description on subcommand struct - (f531a2d) - Mattia Righetti
+- standardized imports for io::Result - (aa1de2e) - Mattia Righetti
+
+- - -
+
 ## 0.3.0 - 2023-10-27
 #### Features
 - **(check)** impl check command - (fede849) - Mattia Righetti
