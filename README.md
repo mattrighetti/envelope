@@ -1,5 +1,28 @@
 # envelope
-envelope is a command line utility and tool to help you manage your .env files.
+envelope is a modern environment variables manager.
+
+```sh
+A modern environment variables manager
+
+Usage: envelope [COMMAND]
+
+Commands:
+  init       Initialize envelope
+  check      Check which environment is currently active
+  add        Add environment variables to a specific environment
+  list       List saved environments and/or their variables
+  import     Import environment variables
+  delete     Delete environment variables
+  export     Export environment variables
+  duplicate  Create a copy of another environment
+  drop       Drop environment
+  sync       Sync environment with another environment
+  help       Print this message or the help of the given subcommand(s)
+
+Options:
+  -h, --help     Print help
+  -V, --version  Print version
+```
 
 ## How it works
 envelope is basically a command line utility that leverages an SQLite database
@@ -32,24 +55,17 @@ $ cat .env | envelope
 
 ### Import
 Import from .env file
+
+
 ```
 $ envelope import dev .env
-$ envelope list
-+-------------+-------------------+----------------------------------------------+
-| ENVIRONMENT | VARIABLE          | VALUE                                        |
-+-------------+-------------------+----------------------------------------------+
-| dev         | API_KEY           | your_api_key_here                            |
-+-------------+-------------------+----------------------------------------------+
-| dev         | AWS_ACCESS_KEY_ID | your_access_key_id                           |
-+-------------+-------------------+----------------------------------------------+
-| dev         | DATABASE_URL      | postgres://user:password@localhost:5432/mydb |
-+-------------+-------------------+----------------------------------------------+
-| dev         | DEBUG_MODE        | true                                         |
-+-------------+-------------------+----------------------------------------------+
-| dev         | SECRET_KEY        | mysecretkey123                               |
-+-------------+-------------------+----------------------------------------------+
-| dev         | SMTP_HOST         | smtp.example.com                             |
-+-------------+-------------------+----------------------------------------------+
+$ envelope list dev
+API_KEY=your_api_key_here
+AWS_ACCESS_KEY_ID=your_access_key_id
+DATABASE_URL=postgres://user:password@localhost:5432/mydb
+DEBUG_MODE=true
+SECRET_KEY=mysecretkey123
+SMTP_HOST=smtp.example.com
 ```
 
 It's also possible to import directly from stdin
@@ -61,26 +77,20 @@ $ cat .env | envelope import prod
 List env variables of a particular enviroment
 ```
 $ envelope list dev
-+-------------+-------------------+----------------------------------------------+
-| ENVIRONMENT | VARIABLE          | VALUE                                        |
-+-------------+-------------------+----------------------------------------------+
-| dev         | API_KEY           | your_api_key_here                            |
-+-------------+-------------------+----------------------------------------------+
-+   ...       +      ...          +                   .......                    +
-+-------------+-------------------+----------------------------------------------+
-| dev         | SMTP_HOST         | smtp.example.com                             |
-+-------------+-------------------+----------------------------------------------+
+API_KEY=your_api_key
+...
+SMTP_HOST=smtp.example.com
 ```
 
 ### Export
-Create a .env file with variables of a specific enviroment
+Export environment variables to a .env file in current directory
 ```
 $ envelope export prod
 ```
 This will create a .env file containing all the variables that you have stored
 in your `prod` enviroment in envelope.
 
-This makes it easy to switch between different configurations, need to use the
+This makes it easy to switch between different .env configurations, need to use the
 prod envs? Just run `envelope export prod`, want to switch to your dev ones? Run
 `envelope export dev` and everything will be handled for you, for free.
 
@@ -90,20 +100,34 @@ $ envelope export prod -o .env.prod
 ```
 
 ### Add
-Add env variables
+Add env variables to an environment
 ```
-$ envelope add local DB_CONNECTION https://example.com
+$ envelope add local db_connection https://example.com
 $ envelope list local
-+-------------+-------------------+-----------------------+
-| ENVIRONMENT | VARIABLE          | VALUE                 |
-+-------------+-------------------+-----------------------+
-| local       | DB_CONNECTION     | https://examples.com  |
-+-------------+-------------------+-----------------------+
+DB_CONNECTION=https://examples.com
 ```
+You can use lowercased variables, they will be uppercased by envelope
 
 ### Delete
 Delete entire environments from envelope
 ```
 $ envelope delete dev
 $ envelope list dev
+```
+Envelope always soft deletes environment variables, they are never actually
+deleted. You can however do a hard delete using the `drop` command
+
+### Check
+Checks which environment is currently active
+```sh
+$ export $(envelope list dev)
+$ envelope check
+dev
+```
+
+### Drop
+Drops (hard deletes) an environment
+```sh
+$ envelope drop dev
+$ envelope list
 ```
