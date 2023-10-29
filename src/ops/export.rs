@@ -3,13 +3,13 @@ use sqlx::SqlitePool;
 
 use std::fs;
 use std::io;
-use std::io::{Error, ErrorKind, Write};
+use std::io::{Error, ErrorKind, Result, Write};
 
 pub async fn export_dotenv(
     db: &SqlitePool,
     env: &str,
     buf: &mut io::BufWriter<fs::File>,
-) -> io::Result<()> {
+) -> Result<()> {
     let envs = sqlx::query_as::<_, EnvironmentRow>(
         r"SELECT env, key, value, created_at
         FROM environments

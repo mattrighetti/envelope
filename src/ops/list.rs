@@ -4,9 +4,9 @@ use sqlx::{QueryBuilder, Sqlite, SqlitePool};
 use prettytable::{row, Table};
 
 use std::io;
-use std::io::{BufRead, Error, ErrorKind, Write};
+use std::io::{BufRead, Error, ErrorKind, Result, Write};
 
-pub async fn print_from_stdin() -> io::Result<()> {
+pub async fn print_from_stdin() -> Result<()> {
     let mut table = Table::new();
     table.add_row(row!["VARIABLE", "VALUE"]);
 
@@ -75,7 +75,7 @@ fn query_builder(env: &str, truncate: Truncate) -> QueryBuilder<Sqlite> {
     query_builder
 }
 
-pub async fn list(pool: &SqlitePool, env: &str, truncate: Truncate) -> io::Result<()> {
+pub async fn list(pool: &SqlitePool, env: &str, truncate: Truncate) -> Result<()> {
     let envs: Vec<EnvironmentRow> = query_builder(env, truncate)
         .build_query_as()
         .fetch_all(pool)
@@ -89,7 +89,7 @@ pub async fn list(pool: &SqlitePool, env: &str, truncate: Truncate) -> io::Resul
     Ok(())
 }
 
-pub async fn list_raw<W: Write>(writer: &mut W, pool: &SqlitePool, env: &str) -> io::Result<()> {
+pub async fn list_raw<W: Write>(writer: &mut W, pool: &SqlitePool, env: &str) -> Result<()> {
     let envs: Vec<EnvironmentRow> = query_builder(env, Truncate::None)
         .build_query_as()
         .fetch_all(pool)
@@ -103,7 +103,7 @@ pub async fn list_raw<W: Write>(writer: &mut W, pool: &SqlitePool, env: &str) ->
     Ok(())
 }
 
-pub async fn list_envs<W: Write>(writer: &mut W, pool: &SqlitePool) -> io::Result<()> {
+pub async fn list_envs<W: Write>(writer: &mut W, pool: &SqlitePool) -> Result<()> {
     let envs: Vec<Environment> =
         sqlx::query_as::<_, Environment>("SELECT DISTINCT(env) FROM environments")
             .fetch_all(pool)

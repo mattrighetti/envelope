@@ -1,7 +1,5 @@
-use std::{
-    collections::HashSet,
-    io::{Error, ErrorKind, Result, Write},
-};
+use std::collections::HashSet;
+use std::io::{Error, ErrorKind, Result, Write};
 
 use sqlx::SqlitePool;
 

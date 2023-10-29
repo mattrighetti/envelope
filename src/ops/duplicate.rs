@@ -1,8 +1,7 @@
 use sqlx::SqlitePool;
-use std::io;
-use std::io::{Error, ErrorKind};
+use std::io::{Error, ErrorKind, Result};
 
-pub async fn duplicate(pool: &SqlitePool, source: &str, target: &str) -> io::Result<()> {
+pub async fn duplicate(pool: &SqlitePool, source: &str, target: &str) -> Result<()> {
     sqlx::query(
         r"INSERT INTO environments(env,key,value)
         SELECT ?2, key, value

@@ -1,11 +1,11 @@
 use sqlx::SqlitePool;
-use std::io::{self, BufRead, Write};
-use std::io::{Error, ErrorKind};
+use std::io::{BufRead, Write};
+use std::io::{Error, ErrorKind, Result};
 
 /// Adds a single key-value element to the database
 ///
 /// If the value of v is None, an empty string is inserted
-pub async fn add_var(db: &SqlitePool, env: &str, k: &str, v: &str) -> io::Result<()> {
+pub async fn add_var(db: &SqlitePool, env: &str, k: &str, v: &str) -> Result<()> {
     if k.starts_with('#') {
         return Err(Error::new(ErrorKind::Other, "key name cannot start with #"));
     }
@@ -26,7 +26,7 @@ pub async fn import<W: Write, R: BufRead>(
     writer: &mut W,
     pool: &SqlitePool,
     env: &str,
-) -> io::Result<()> {
+) -> Result<()> {
     for line in reader.lines() {
         if line.is_err() {
             continue;

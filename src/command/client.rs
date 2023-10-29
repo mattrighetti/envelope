@@ -1,5 +1,5 @@
 use clap::Subcommand;
-use std::io::{Error, ErrorKind};
+use std::io::{Error, ErrorKind, Result};
 
 use crate::{db, ops};
 
@@ -18,36 +18,28 @@ pub enum EnvelopeCmd {
     /// Initialize envelope
     Init,
 
-    /// Add environment variables
-    Add(add::Cmd),
-
     /// Check which environment is currently exported
     Check,
 
-    /// List environment variables
+    Add(add::Cmd),
+
     List(list::Cmd),
 
-    /// Import environment variables
     Import(import::Cmd),
 
-    /// Delete environment variables
     Delete(delete::Cmd),
 
-    /// Export environment variables
     Export(export::Cmd),
 
-    /// Duplicate environments
     Duplicate(duplicate::Cmd),
 
-    /// Drop environment
     Drop(drop::Cmd),
 
-    /// Syncs environments
     Sync(sync::Cmd),
 }
 
 impl EnvelopeCmd {
-    pub async fn run(self) -> std::io::Result<()> {
+    pub async fn run(self) -> Result<()> {
         if !db::is_present() && !matches!(self, Self::Init) {
             return Err(Error::new(ErrorKind::Other, "envelope is not initialized"));
         }
