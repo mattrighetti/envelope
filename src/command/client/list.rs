@@ -5,6 +5,7 @@ use std::io::Result;
 
 use crate::ops;
 
+/// List saved environments and/or their variables
 #[derive(Parser)]
 pub struct Cmd {
     /// Environment that you wish to list.

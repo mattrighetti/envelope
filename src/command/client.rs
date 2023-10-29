@@ -18,31 +18,23 @@ pub enum EnvelopeCmd {
     /// Initialize envelope
     Init,
 
-    /// Add environment variables
-    Add(add::Cmd),
-
     /// Check which environment is currently exported
     Check,
 
-    /// List environment variables
+    Add(add::Cmd),
+
     List(list::Cmd),
 
-    /// Import environment variables
     Import(import::Cmd),
 
-    /// Delete environment variables
     Delete(delete::Cmd),
 
-    /// Export environment variables
     Export(export::Cmd),
 
-    /// Duplicate environments
     Duplicate(duplicate::Cmd),
 
-    /// Drop environment
     Drop(drop::Cmd),
 
-    /// Syncs environments
     Sync(sync::Cmd),
 }
 

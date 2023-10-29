@@ -5,6 +5,7 @@ use std::io::{Error, ErrorKind, Result};
 
 use crate::ops;
 
+/// Create a copy of another environment
 #[derive(Parser)]
 pub struct Cmd {
     /// Environment that you want to duplicate

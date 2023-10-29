@@ -4,6 +4,7 @@ use std::io::Result;
 
 use crate::ops;
 
+/// Delete environment variables
 #[derive(Parser)]
 pub struct Cmd {
     /// Environment that you wish to delete

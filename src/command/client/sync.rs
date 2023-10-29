@@ -5,6 +5,7 @@ use std::io::{Error, ErrorKind, Result};
 
 use crate::ops;
 
+/// Sync environment with another environment
 #[derive(Parser)]
 pub struct Cmd {
     /// Source environment

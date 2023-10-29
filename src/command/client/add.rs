@@ -4,6 +4,7 @@ use std::io::{BufRead, Error, ErrorKind, Result, Write};
 
 use crate::ops;
 
+/// Add environment variables to a specific environment
 #[derive(Parser)]
 pub struct Cmd {
     /// Environment variable to which you wish to add an environment variable

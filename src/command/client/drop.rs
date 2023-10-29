@@ -5,6 +5,7 @@ use sqlx::SqlitePool;
 
 use crate::ops;
 
+/// Drop environment
 #[derive(Parser)]
 pub struct Cmd {
     /// Environment to drop

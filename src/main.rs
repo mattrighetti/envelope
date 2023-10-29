@@ -15,7 +15,7 @@ static HELP_TEMPLATE: &str = "\
 
 {all-args}{after-help}";
 
-/// A self-contained .env manager
+/// A modern environment variables manager
 #[derive(Parser)]
 #[command(
     author = "Mattia Righetti <matt95.righetti@gmail.com>",
