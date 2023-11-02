@@ -4,8 +4,8 @@ use std::fs::OpenOptions;
 use std::io::{BufWriter, Result};
 
 use clap::Parser;
-use sqlx::SqlitePool;
 
+use crate::db::EnvelopeDb;
 use crate::ops;
 
 /// Export environment variables
@@ -20,7 +20,7 @@ pub struct Cmd {
 }
 
 impl Cmd {
-    pub async fn run(&self, db: &SqlitePool) -> Result<()> {
+    pub async fn run(&self, db: &EnvelopeDb) -> Result<()> {
         let mut opts = OpenOptions::new();
         opts.create(true);
         opts.write(true);

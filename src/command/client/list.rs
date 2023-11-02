@@ -1,8 +1,8 @@
 use clap::Parser;
-use sqlx::SqlitePool;
 use std::io;
 use std::io::Result;
 
+use crate::db::{self, EnvelopeDb};
 use crate::ops;
 
 /// List saved environments and/or their variables
@@ -20,7 +20,7 @@ pub struct Cmd {
 }
 
 impl Cmd {
-    pub async fn run(&self, db: &SqlitePool) -> Result<()> {
+    pub async fn run(&self, db: &EnvelopeDb) -> Result<()> {
         match &self.env {
             None => ops::list_envs(&mut io::stdout(), db).await?,
             Some(env) => {
@@ -28,8 +28,8 @@ impl Cmd {
                     ops::list_raw(&mut io::stdout(), db, env).await?;
                 } else {
                     let truncate = match self.truncate {
-                        true => ops::Truncate::Range(0, 60),
-                        false => ops::Truncate::None,
+                        true => db::Truncate::Range(0, 60),
+                        false => db::Truncate::None,
                     };
                     ops::list(db, env, truncate).await?;
                 }

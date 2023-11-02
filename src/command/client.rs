@@ -1,7 +1,7 @@
 use clap::Subcommand;
 use std::io::{Error, ErrorKind, Result};
 
-use crate::{db, ops};
+use crate::{db::EnvelopeDb, ops};
 
 mod add;
 mod delete;
@@ -40,11 +40,9 @@ pub enum EnvelopeCmd {
 
 impl EnvelopeCmd {
     pub async fn run(self) -> Result<()> {
-        if !db::is_present() && !matches!(self, Self::Init) {
-            return Err(Error::new(ErrorKind::Other, "envelope is not initialized"));
-        }
-
-        let db = db::init().await.unwrap();
+        let db = EnvelopeDb::load(matches!(self, Self::Init))
+            .await
+            .map_err(|e| Error::new(ErrorKind::Other, e.to_string()))?;
 
         match self {
             Self::Delete(delete) => delete.run(&db).await?,

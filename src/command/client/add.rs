@@ -1,8 +1,8 @@
 use clap::Parser;
-use sqlx::SqlitePool;
+
 use std::io::{BufRead, Error, ErrorKind, Result, Write};
 
-use crate::ops;
+use crate::{db::EnvelopeDb, ops};
 
 /// Add environment variables to a specific environment
 #[derive(Parser)]
@@ -22,7 +22,7 @@ pub struct Cmd {
 }
 
 impl Cmd {
-    pub async fn run(&self, db: &SqlitePool) -> Result<()> {
+    pub async fn run(&self, db: &EnvelopeDb) -> Result<()> {
         if self.stdin && self.value.is_some() {
             return Err(Error::new(
                 ErrorKind::Other,
