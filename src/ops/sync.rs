@@ -1,34 +1,11 @@
-use std::io::{Error, ErrorKind, Result};
+use std::io::Result;
 
-use sqlx::{QueryBuilder, Sqlite, SqlitePool};
-
-fn query_builder(overwrite: &bool) -> QueryBuilder<Sqlite> {
-    let mut query_builder: QueryBuilder<Sqlite> = QueryBuilder::new(
-        r"INSERT INTO environments (env, key, value)
-        SELECT ?2, key, value
-        FROM environments
-        WHERE env = ?1 ",
-    );
-    if !overwrite {
-        query_builder.push(r" AND key NOT IN (SELECT key FROM environments WHERE env = ?2 GROUP BY key HAVING MAX(created_at)) ");
-    }
-    query_builder.push("GROUP BY key HAVING MAX(created_at);");
-
-    query_builder
-}
+use crate::db::EnvelopeDb;
 
 /// Syncs copies variables src_env and adds them to target_env
 /// only if they are not already present
-pub async fn sync(db: &SqlitePool, src_env: &str, target_env: &str, overwrite: bool) -> Result<()> {
-    query_builder(&overwrite)
-        .build()
-        .bind(src_env)
-        .bind(target_env)
-        .execute(db)
-        .await
-        .map_err(|e| Error::new(ErrorKind::Other, e.to_string()))?;
-
-    Ok(())
+pub async fn sync(db: &EnvelopeDb, src_env: &str, target_env: &str, overwrite: bool) -> Result<()> {
+    db.sync(src_env, target_env, overwrite).await
 }
 
 #[cfg(test)]
@@ -46,7 +23,9 @@ mod test {
 
     #[tokio::test]
     async fn test_sync_1() {
-        let pool = test_db().await;
+        let db = test_db().await;
+        let pool = db.get_pool();
+
         sqlx::query(
             r"INSERT INTO environments (env, key, value)
             VALUES
@@ -55,17 +34,17 @@ mod test {
             ('dev', 'C', 'Z'),
             ('dev', 'D', 'K');",
         )
-        .execute(&pool)
+        .execute(pool)
         .await
         .unwrap();
 
-        let res = sync(&pool, "dev", "prod", false).await;
+        let res = sync(&db, "dev", "prod", false).await;
         assert!(res.is_ok());
 
         let rows = sqlx::query_as::<_, EnvironmentRow>(
             "SELECT * FROM environments WHERE env = 'prod' ORDER BY key",
         )
-        .fetch_all(&pool)
+        .fetch_all(pool)
         .await
         .unwrap();
 
@@ -80,7 +59,9 @@ mod test {
 
     #[tokio::test]
     async fn test_sync_2() {
-        let pool = test_db().await;
+        let db = test_db().await;
+        let pool = db.get_pool();
+
         sqlx::query(
             r"INSERT INTO environments (env, key, value)
             VALUES
@@ -92,17 +73,17 @@ mod test {
             ('dev',  'C', 'Z'),
             ('dev',  'D', 'K');",
         )
-        .execute(&pool)
+        .execute(pool)
         .await
         .unwrap();
 
-        let res = sync(&pool, "dev", "prod", false).await;
+        let res = sync(&db, "dev", "prod", false).await;
         assert!(res.is_ok());
 
         let rows = sqlx::query_as::<_, EnvironmentRow>(
             "SELECT * FROM environments WHERE env = 'prod' ORDER BY key",
         )
-        .fetch_all(&pool)
+        .fetch_all(pool)
         .await
         .unwrap();
 
@@ -117,7 +98,9 @@ mod test {
 
     #[tokio::test]
     async fn test_sync_3() {
-        let pool = test_db().await;
+        let db = test_db().await;
+        let pool = db.get_pool();
+
         sqlx::query(
             r"INSERT INTO environments
             VALUES
@@ -127,18 +110,18 @@ mod test {
             ('dev', 'C', 'Z', 1697207331),
             ('dev', 'D', 'K', 1697207331);",
         )
-        .execute(&pool)
+        .execute(pool)
         .await
         .unwrap();
 
-        let res = sync(&pool, "dev", "prod", false).await;
+        let res = sync(&db, "dev", "prod", false).await;
         println!("{:?}", res);
         assert!(res.is_ok());
 
         let rows = sqlx::query_as::<_, EnvironmentRow>(
             "SELECT * FROM environments WHERE env = 'prod' ORDER BY key",
         )
-        .fetch_all(&pool)
+        .fetch_all(pool)
         .await
         .unwrap();
 
@@ -153,7 +136,9 @@ mod test {
 
     #[tokio::test]
     async fn test_sync_overwrite() {
-        let pool = test_db().await;
+        let db = test_db().await;
+        let pool = db.get_pool();
+
         sqlx::query(
             r"INSERT INTO environments
             VALUES
@@ -166,11 +151,11 @@ mod test {
             ('dev', 'C', 'Z', 1697207331),
             ('dev', 'D', 'K', 1697207331);",
         )
-        .execute(&pool)
+        .execute(pool)
         .await
         .unwrap();
 
-        let res = sync(&pool, "dev", "prod", true).await;
+        let res = sync(&db, "dev", "prod", true).await;
         println!("{:?}", res);
         assert!(res.is_ok());
 
@@ -182,7 +167,7 @@ mod test {
             HAVING MAX(created_at)
             ORDER BY key",
         )
-        .fetch_all(&pool)
+        .fetch_all(pool)
         .await
         .unwrap();
 

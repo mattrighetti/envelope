@@ -4,8 +4,8 @@ use std::io;
 use std::io::{BufRead, BufReader, Result};
 
 use clap::Parser;
-use sqlx::SqlitePool;
 
+use crate::db::EnvelopeDb;
 use crate::ops;
 
 /// Import environment variables
@@ -20,7 +20,7 @@ pub struct Cmd {
 }
 
 impl Cmd {
-    pub async fn run(&self, db: &SqlitePool) -> Result<()> {
+    pub async fn run(&self, db: &EnvelopeDb) -> Result<()> {
         let reader: Box<dyn BufRead> = match &self.path {
             None => Box::new(BufReader::new(io::stdin())),
             Some(path) => {

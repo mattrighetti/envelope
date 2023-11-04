@@ -1,9 +1,8 @@
 use clap::Parser;
-use sqlx::SqlitePool;
 
 use std::io::{Error, ErrorKind, Result};
 
-use crate::ops;
+use crate::{db::EnvelopeDb, ops};
 
 /// Sync environment with another environment
 #[derive(Parser)]
@@ -20,7 +19,7 @@ pub struct Cmd {
 }
 
 impl Cmd {
-    pub async fn run(&self, db: &SqlitePool) -> Result<()> {
+    pub async fn run(&self, db: &EnvelopeDb) -> Result<()> {
         if self.source == self.target {
             return Err(Error::new(ErrorKind::Other, "can't sync the same env"));
         }

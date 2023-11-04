@@ -1,22 +1,17 @@
-use sqlx::SqlitePool;
 use std::io::{BufRead, Write};
 use std::io::{Error, ErrorKind, Result};
+
+use crate::db::EnvelopeDb;
 
 /// Adds a single key-value element to the database
 ///
 /// If the value of v is None, an empty string is inserted
-pub async fn add_var(db: &SqlitePool, env: &str, k: &str, v: &str) -> Result<()> {
+pub async fn add_var(db: &EnvelopeDb, env: &str, k: &str, v: &str) -> Result<()> {
     if k.starts_with('#') {
         return Err(Error::new(ErrorKind::Other, "key name cannot start with #"));
     }
 
-    sqlx::query("INSERT INTO environments(env,key,value) VALUES (?, upper(?), ?);")
-        .bind(env)
-        .bind(k)
-        .bind(v)
-        .execute(db)
-        .await
-        .map_err(|e| Error::new(ErrorKind::Other, e.to_string()))?;
+    db.insert(env, k, v).await?;
 
     Ok(())
 }
@@ -24,7 +19,7 @@ pub async fn add_var(db: &SqlitePool, env: &str, k: &str, v: &str) -> Result<()>
 pub async fn import<W: Write, R: BufRead>(
     reader: R,
     writer: &mut W,
-    pool: &SqlitePool,
+    db: &EnvelopeDb,
     env: &str,
 ) -> Result<()> {
     for line in reader.lines() {
@@ -39,13 +34,7 @@ pub async fn import<W: Write, R: BufRead>(
         }
 
         if let Some((k, v)) = line.split_once('=') {
-            sqlx::query("INSERT INTO environments(env,key,value) VALUES (?, upper(?), ?);")
-                .bind(env)
-                .bind(k)
-                .bind(v)
-                .execute(pool)
-                .await
-                .map_err(|e| Error::new(ErrorKind::Other, e.to_string()))?;
+            db.insert(env, k, v).await?;
         } else {
             writeln!(writer, "invalid {}, skipping", line)?;
         }
@@ -66,13 +55,14 @@ mod test {
 
     #[tokio::test]
     async fn test_import() {
-        let pool = test_db().await;
+        let db = test_db().await;
+        let pool = db.get_pool();
         let mut output: Vec<u8> = Vec::new();
 
         let res = import(
             stdin_input("key1=value1\nkey2=value2"),
             &mut output,
-            &pool,
+            &db,
             "prod",
         )
         .await;
@@ -82,7 +72,7 @@ mod test {
         let rows = sqlx::query_as::<_, EnvironmentRow>(
             "SELECT * FROM environments WHERE env = 'prod' ORDER BY key",
         )
-        .fetch_all(&pool)
+        .fetch_all(pool)
         .await
         .unwrap();
 
@@ -97,17 +87,19 @@ mod test {
 
     #[tokio::test]
     async fn test_import_none() {
-        let pool = test_db().await;
+        let db = test_db().await;
+        let pool = db.get_pool();
+
         let mut output: Vec<u8> = Vec::new();
 
-        let res = import(stdin_input("# key1=value1"), &mut output, &pool, "prod").await;
+        let res = import(stdin_input("# key1=value1"), &mut output, &db, "prod").await;
         assert!(res.is_ok());
         assert!(!output.is_empty());
 
         let rows = sqlx::query_as::<_, EnvironmentRow>(
             "SELECT * FROM environments WHERE env = 'prod' ORDER BY key",
         )
-        .fetch_all(&pool)
+        .fetch_all(pool)
         .await
         .unwrap();
 
@@ -119,13 +111,15 @@ mod test {
 
     #[tokio::test]
     async fn test_mul_import() {
-        let pool = test_db().await;
+        let db = test_db().await;
+        let pool = db.get_pool();
+
         let mut output: Vec<u8> = Vec::new();
 
         let res = import(
             stdin_input("#k=v\n#invalid-value\nkey value\nkey1=val1\nkey2=val2"),
             &mut output,
-            &pool,
+            &db,
             "prod",
         )
         .await;
@@ -135,7 +129,7 @@ mod test {
         let rows = sqlx::query_as::<_, EnvironmentRow>(
             "SELECT * FROM environments WHERE env = 'prod' ORDER BY key",
         )
-        .fetch_all(&pool)
+        .fetch_all(pool)
         .await
         .unwrap();
 

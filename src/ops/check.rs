@@ -1,11 +1,9 @@
 use std::collections::HashSet;
-use std::io::{Error, ErrorKind, Result, Write};
+use std::io::{Result, Write};
 
-use sqlx::SqlitePool;
+use crate::db::EnvelopeDb;
 
-use crate::db::EnvironmentRow;
-
-pub async fn check<W: Write>(w: &mut W, db: &SqlitePool) -> Result<()> {
+pub async fn check<W: Write>(w: &mut W, db: &EnvelopeDb) -> Result<()> {
     let res = check_active_envs(db).await?;
     for env in res {
         writeln!(w, "{}", env)?;
@@ -14,17 +12,8 @@ pub async fn check<W: Write>(w: &mut W, db: &SqlitePool) -> Result<()> {
     Ok(())
 }
 
-async fn check_active_envs(db: &SqlitePool) -> Result<HashSet<String>> {
-    let rows = sqlx::query_as::<_, EnvironmentRow>(
-        r"SELECT *
-        FROM environments
-        GROUP BY env, key
-        HAVING MAX(created_at)",
-    )
-    .fetch_all(db)
-    .await
-    .map_err(|e| Error::new(ErrorKind::Other, e.to_string()))?;
-
+async fn check_active_envs(db: &EnvelopeDb) -> Result<HashSet<String>> {
+    let rows = db.get_all_env_vars().await?;
     // dumb implementation
     // TODO optimise this search
     let mut active = HashSet::new();
@@ -60,7 +49,9 @@ mod test {
 
     #[tokio::test]
     async fn test_check_multiple_active_subset() {
-        let pool = test_db().await;
+        let db = test_db().await;
+        let pool = db.get_pool();
+
         sqlx::query(
             r"INSERT INTO environments (env, key, value)
             VALUES
@@ -71,7 +62,7 @@ mod test {
             ('test', 'ENVELOPE_TEST_MA_D', 'Z'),
             ('test', 'ENVELOPE_TEST_MA_E', 'K');",
         )
-        .execute(&pool)
+        .execute(pool)
         .await
         .unwrap();
 
@@ -79,14 +70,16 @@ mod test {
         std::env::set_var("ENVELOPE_TEST_MA_B", "Y");
         std::env::set_var("ENVELOPE_TEST_MA_C", "Z");
 
-        let res = check_active_envs(&pool).await;
+        let res = check_active_envs(&db).await;
         assert!(res.is_ok());
         assert_eq!(HashSet::from(["dev".into(), "loc".into()]), res.unwrap());
     }
 
     #[tokio::test]
     async fn test_check_none_active() {
-        let pool = test_db().await;
+        let db = test_db().await;
+        let pool = db.get_pool();
+
         sqlx::query(
             r"INSERT INTO environments (env, key, value)
             VALUES
@@ -97,21 +90,23 @@ mod test {
             ('test', 'ENVELOPE_TEST_NA_D', 'Z'),
             ('test', 'ENVELOPE_TEST_NA_E', 'K');",
         )
-        .execute(&pool)
+        .execute(pool)
         .await
         .unwrap();
 
         std::env::set_var("ENVELOPE_TEST_NA_A", "X");
         std::env::set_var("ENVELOPE_TEST_NA_C", "Z");
 
-        let res = check_active_envs(&pool).await;
+        let res = check_active_envs(&db).await;
         assert!(res.is_ok());
         assert!(res.unwrap().is_empty());
     }
 
     #[tokio::test]
     async fn test_check_key_present_diff_value() {
-        let pool = test_db().await;
+        let db = test_db().await;
+        let pool = db.get_pool();
+
         sqlx::query(
             r"INSERT INTO environments (env, key, value)
             VALUES
@@ -122,21 +117,23 @@ mod test {
             ('test', 'ENVELOPE_TEST_KPDV_D', 'A'),
             ('test', 'ENVELOPE_TEST_KPDV_E', 'K');",
         )
-        .execute(&pool)
+        .execute(pool)
         .await
         .unwrap();
 
         std::env::set_var("ENVELOPE_TEST_KPDV_D", "X");
         std::env::set_var("ENVELOPE_TEST_KPDV_E", "K");
 
-        let res = check_active_envs(&pool).await;
+        let res = check_active_envs(&db).await;
         assert!(res.is_ok());
         assert!(res.unwrap().is_empty());
     }
 
     #[tokio::test]
     async fn test_check_one_active() {
-        let pool = test_db().await;
+        let db = test_db().await;
+        let pool = db.get_pool();
+
         sqlx::query(
             r"INSERT INTO environments (env, key, value)
             VALUES
@@ -147,14 +144,14 @@ mod test {
             ('test', 'ENVELOPE_TEST_OP_D', 'A'),
             ('test', 'ENVELOPE_TEST_OP_E', 'K');",
         )
-        .execute(&pool)
+        .execute(pool)
         .await
         .unwrap();
 
         std::env::set_var("ENVELOPE_TEST_OP_D", "A");
         std::env::set_var("ENVELOPE_TEST_OP_E", "K");
 
-        let res = check_active_envs(&pool).await;
+        let res = check_active_envs(&db).await;
         assert!(res.is_ok());
         assert_eq!(HashSet::from(["test".into()]), res.unwrap());
     }
