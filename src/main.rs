@@ -1,6 +1,8 @@
 mod command;
 mod db;
+mod editor;
 mod ops;
+mod subproc;
 
 use clap::Parser;
 use command::EnvelopeCmd;

@@ -7,6 +7,7 @@ mod add;
 mod delete;
 mod drop;
 mod duplicate;
+mod edit;
 mod export;
 mod import;
 mod list;
@@ -27,6 +28,8 @@ pub enum EnvelopeCmd {
     Duplicate(duplicate::Cmd),
 
     Export(export::Cmd),
+
+    Edit(edit::Cmd),
 
     /// Initialize envelope
     Init,
@@ -51,6 +54,7 @@ impl EnvelopeCmd {
             Self::Drop(drop) => drop.run(&db).await?,
             Self::Duplicate(duplicate) => duplicate.run(&db).await?,
             Self::Export(export) => export.run(&db).await?,
+            Self::Edit(edit) => edit.run(&db).await?,
             Self::Import(import) => import.run(&db).await?,
             Self::List(list) => list.run(&db).await?,
             Self::Sync(sync) => sync.run(&db).await?,
