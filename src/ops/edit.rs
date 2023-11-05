@@ -1,11 +1,11 @@
 use std::{
     collections::HashSet,
-    io::{BufRead, Error, ErrorKind, Result},
+    io::{BufRead, Result},
 };
 
 use crate::{
     db::{EnvelopeDb, Truncate},
-    editor::Editor,
+    editor, other_err,
 };
 
 pub async fn edit(db: &EnvelopeDb, env: &str) -> Result<()> {
@@ -17,12 +17,9 @@ pub async fn edit(db: &EnvelopeDb, env: &str) -> Result<()> {
         .collect();
 
     let data = kvs_hs.clone().into_iter().collect::<Vec<_>>().join("\n");
-    let status = Editor::spawn_with(data.as_bytes());
+    let status = editor::spawn_with(data.as_bytes());
     if let Err(e) = status {
-        return Err(Error::new(
-            ErrorKind::Other,
-            format!("error running child process: {}", e),
-        ));
+        return Err(other_err!("error running child process: {}", e));
     }
 
     for kv in status.unwrap().lines() {

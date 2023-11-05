@@ -1,10 +1,8 @@
-use sqlx::QueryBuilder;
-use sqlx::Sqlite;
-use sqlx::SqlitePool;
+use sqlx::{QueryBuilder, Sqlite, SqlitePool};
 use std::env;
-
 use std::io;
-use std::io::{Error, ErrorKind};
+
+use crate::other_err;
 
 pub(crate) type EnvelopeResult<T> = Result<T, Box<dyn std::error::Error>>;
 
@@ -93,7 +91,7 @@ impl EnvelopeDb {
         )
         .fetch_all(&self.db)
         .await
-        .map_err(|e| Error::new(ErrorKind::Other, e.to_string()))?;
+        .map_err(|e| other_err!("db error", e))?;
 
         Ok(rows)
     }
@@ -105,7 +103,7 @@ impl EnvelopeDb {
             .bind(var)
             .execute(&self.db)
             .await
-            .map_err(|e| Error::new(ErrorKind::Other, e.to_string()))?;
+            .map_err(|e| other_err!("db error", e))?;
 
         Ok(())
     }
@@ -115,7 +113,7 @@ impl EnvelopeDb {
             .bind(env)
             .execute(&self.db)
             .await
-            .map_err(|e| Error::new(ErrorKind::Other, e.to_string()))?;
+            .map_err(|e| other_err!("db error", e))?;
 
         Ok(())
     }
@@ -125,7 +123,7 @@ impl EnvelopeDb {
             .bind(key)
             .execute(&self.db)
             .await
-            .map_err(|e| Error::new(ErrorKind::Other, e.to_string()))?;
+            .map_err(|e| other_err!("db error", e))?;
 
         Ok(())
     }
@@ -136,7 +134,7 @@ impl EnvelopeDb {
             .bind(key)
             .execute(&self.db)
             .await
-            .map_err(|e| Error::new(ErrorKind::Other, e.to_string()))?;
+            .map_err(|e| other_err!("db error", e))?;
 
         Ok(())
     }
@@ -146,7 +144,7 @@ impl EnvelopeDb {
             .bind(env)
             .execute(&self.db)
             .await
-            .map_err(|e| Error::new(ErrorKind::Other, e.to_string()))?;
+            .map_err(|e| other_err!("db error", e))?;
 
         Ok(())
     }
@@ -164,7 +162,7 @@ impl EnvelopeDb {
         .bind(tgt_env)
         .execute(&self.db)
         .await
-        .map_err(|e| Error::new(ErrorKind::Other, e.to_string()))?;
+        .map_err(|e| other_err!("db error", e))?;
 
         Ok(())
     }
@@ -181,7 +179,7 @@ impl EnvelopeDb {
         .bind(env)
         .fetch_all(&self.db)
         .await
-        .map_err(|e| Error::new(ErrorKind::Other, e.to_string()))
+        .map_err(|e| other_err!("db error", e))
     }
 
     pub async fn sync(&self, src_env: &str, tgt_env: &str, overwrite: bool) -> io::Result<()> {
@@ -204,7 +202,7 @@ impl EnvelopeDb {
             .bind(tgt_env)
             .execute(&self.db)
             .await
-            .map_err(|e| Error::new(ErrorKind::Other, e.to_string()))?;
+            .map_err(|e| other_err!("db error", e))?;
 
         Ok(())
     }
@@ -239,14 +237,14 @@ impl EnvelopeDb {
             .build_query_as()
             .fetch_all(&self.db)
             .await
-            .map_err(|e| Error::new(ErrorKind::Other, e.to_string()))
+            .map_err(|e| other_err!("db error", e))
     }
 
     pub async fn list_environments(&self) -> io::Result<Vec<Environment>> {
         sqlx::query_as::<_, Environment>("SELECT DISTINCT(env) FROM environments")
             .fetch_all(&self.db)
             .await
-            .map_err(|e| Error::new(ErrorKind::Other, e.to_string()))
+            .map_err(|e| other_err!("db error", e))
     }
 }
 

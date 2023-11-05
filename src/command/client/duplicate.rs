@@ -1,8 +1,8 @@
 use clap::Parser;
 
-use std::io::{Error, ErrorKind, Result};
+use std::io::Result;
 
-use crate::{db::EnvelopeDb, ops};
+use crate::{db::EnvelopeDb, ops, other_str_err};
 
 /// Create a copy of another environment
 #[derive(Parser)]
@@ -17,10 +17,7 @@ pub struct Cmd {
 impl Cmd {
     pub async fn run(&self, db: &EnvelopeDb) -> Result<()> {
         if self.source == self.target {
-            return Err(Error::new(
-                ErrorKind::Other,
-                "cannot duplicate to same environment",
-            ));
+            return Err(other_str_err!("cannot duplicate to same environment"));
         }
 
         ops::duplicate(db, &self.source, &self.target).await
