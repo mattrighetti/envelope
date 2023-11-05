@@ -33,9 +33,8 @@ pub async fn edit(db: &EnvelopeDb, env: &str) -> Result<()> {
             // variables and must be set to null, which is done
             // by the delete operation
             if let Some((k, _)) = kv.split_once("=") {
-                db.delete_var_for_env(env, k.trim()).await?;
+                db.delete_var_for_env(env, k[1..k.len()].trim()).await?;
             }
-
             continue;
         }
 
@@ -43,7 +42,6 @@ pub async fn edit(db: &EnvelopeDb, env: &str) -> Result<()> {
             // only insert values that changed
             (false, Some((k, v))) => db.insert(env, k, v).await?,
             _ => {
-                dbg!(kv);
                 continue;
             }
         }
