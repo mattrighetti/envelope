@@ -5,7 +5,7 @@ use std::{
 
 use crate::{
     db::{EnvelopeDb, Truncate},
-    editor, other_err,
+    editor, err,
 };
 
 pub async fn edit(db: &EnvelopeDb, env: &str) -> Result<()> {
@@ -19,7 +19,7 @@ pub async fn edit(db: &EnvelopeDb, env: &str) -> Result<()> {
     let data = kvs_hs.clone().into_iter().collect::<Vec<_>>().join("\n");
     let status = editor::spawn_with(data.as_bytes());
     if let Err(e) = status {
-        return Err(other_err!("error running child process: {}", e));
+        return Err(err!("error running child process: {}", e));
     }
 
     for kv in status.unwrap().lines() {

@@ -2,7 +2,7 @@ use clap::Parser;
 
 use std::io::{BufRead, Result, Write};
 
-use crate::{db::EnvelopeDb, ops, other_str_err};
+use crate::{db::EnvelopeDb, err, ops};
 
 /// Add environment variables to a specific environment
 #[derive(Parser)]
@@ -24,9 +24,7 @@ pub struct Cmd {
 impl Cmd {
     pub async fn run(&self, db: &EnvelopeDb) -> Result<()> {
         if self.stdin && self.value.is_some() {
-            return Err(other_str_err!(
-                "can't specify a value if you're reading from stdin"
-            ));
+            return Err(err!("can't specify a value if you're reading from stdin"));
         }
 
         let mut value = String::new();

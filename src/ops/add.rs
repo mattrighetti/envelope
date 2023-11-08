@@ -2,14 +2,14 @@ use std::io::Result;
 use std::io::{BufRead, Write};
 
 use crate::db::EnvelopeDb;
-use crate::other_str_err;
+use crate::err;
 
 /// Adds a single key-value element to the database
 ///
 /// If the value of v is None, an empty string is inserted
 pub async fn add_var(db: &EnvelopeDb, env: &str, k: &str, v: &str) -> Result<()> {
     if k.starts_with('#') {
-        return Err(other_str_err!("key name cannot start with #"));
+        return Err(err!("key name cannot start with #"));
     }
 
     db.insert(env, k, v).await?;
