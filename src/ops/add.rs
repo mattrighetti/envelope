@@ -9,7 +9,7 @@ use crate::err;
 /// If the value of v is None, an empty string is inserted
 pub async fn add_var(db: &EnvelopeDb, env: &str, k: &str, v: &str) -> Result<()> {
     if k.starts_with('#') {
-        return Err(err!("key name cannot start with #"));
+        return err!("key name cannot start with #");
     }
 
     db.insert(env, k, v).await?;

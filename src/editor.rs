@@ -4,7 +4,7 @@ use std::{
     io::{BufReader, Result, Write},
 };
 
-use crate::{err, subproc::ChildProcess};
+use crate::{err, std_err, subproc::ChildProcess};
 
 fn envelope_editor() -> String {
     let editor = "vi";
@@ -54,15 +54,13 @@ fn prepare_file(data: &[u8]) -> Result<()> {
 pub fn spawn_with(data: &[u8]) -> Result<BufReader<File>> {
     prepare_file(data)?;
 
-    {
-        let editor = envelope_editor();
-        if let Some(pb) = temp_dir().join("ENVELOPE_EDITMSG").to_str() {
-            let cmd = ChildProcess::new(&editor, &[pb], &[]);
-            cmd.run_shell_command()
-                .map_err(|e| err!("error running child process: {}", e))?;
-        } else {
-            return Err(err!("cannot run editor"));
-        }
+    let editor = envelope_editor();
+    if let Some(pb) = temp_dir().join("ENVELOPE_EDITMSG").to_str() {
+        let cmd = ChildProcess::new(&editor, &[pb], &[]);
+        cmd.run_shell_command()
+            .map_err(|e| std_err!("error running child process: {}", e))?;
+    } else {
+        return err!("cannot run editor");
     }
 
     reader()

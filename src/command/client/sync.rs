@@ -21,7 +21,7 @@ pub struct Cmd {
 impl Cmd {
     pub async fn run(&self, db: &EnvelopeDb) -> Result<()> {
         if self.source == self.target {
-            return Err(err!("can't sync the same env"));
+            return err!("can't sync the same env");
         }
 
         ops::sync(db, &self.source, &self.target, false).await

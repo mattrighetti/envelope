@@ -17,7 +17,7 @@ pub struct Cmd {
 impl Cmd {
     pub async fn run(&self, db: &EnvelopeDb) -> Result<()> {
         if self.source == self.target {
-            return Err(err!("cannot duplicate to same environment"));
+            return err!("cannot duplicate to same environment");
         }
 
         ops::duplicate(db, &self.source, &self.target).await

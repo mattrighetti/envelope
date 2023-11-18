@@ -24,7 +24,7 @@ pub struct Cmd {
 impl Cmd {
     pub async fn run(&self, db: &EnvelopeDb) -> Result<()> {
         if self.stdin && self.value.is_some() {
-            return Err(err!("can't specify a value if you're reading from stdin"));
+            return err!("can't specify a value if you're reading from stdin");
         }
 
         let mut value = String::new();

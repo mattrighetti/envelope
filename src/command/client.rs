@@ -1,6 +1,7 @@
 use clap::Subcommand;
-use std::io::{Error, ErrorKind, Result};
+use std::io::Result;
 
+use crate::std_err;
 use crate::{db::EnvelopeDb, ops};
 
 mod add;
@@ -45,7 +46,7 @@ impl EnvelopeCmd {
     pub async fn run(self) -> Result<()> {
         let db = EnvelopeDb::load(matches!(self, Self::Init))
             .await
-            .map_err(|e| Error::new(ErrorKind::Other, e.to_string()))?;
+            .map_err(|e| std_err!("{}", e.to_string()))?;
 
         match self {
             Self::Add(add) => add.run(&db).await?,
