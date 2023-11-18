@@ -37,8 +37,8 @@ pub fn spawn_with(data: &[u8]) -> Result<Vec<u8>> {
     file.write_all(data)?;
     file.write(b"\n\n# Comment variables to remove them")?;
 
-    let pb = pb.to_str().unwrap();
-    let cmd = ChildProcess::new(&editor, &[pb], &[]);
+    let args = &[pb.to_str().unwrap()];
+    let cmd = ChildProcess::new(&editor, args, &[]);
     cmd.run_shell_command()
         .map_err(|e| std_err!("error running child process: {}", e))?;
 

@@ -1,24 +1,19 @@
 use std::{
-    collections::HashMap,
     io::Result,
     process::{Command, ExitStatus},
+    collections::HashMap,
 };
 
 #[derive(Debug)]
-pub struct ChildProcess {
-    cmd: String,
-    args: Vec<String>,
-    envs: HashMap<String, String>,
+pub struct ChildProcess<'a> {
+    cmd: &'a str,
+    args: &'a [&'a str],
+    envs: HashMap<&'a str, &'a str>,
 }
 
-impl ChildProcess {
-    pub fn new(cmd: &str, args: &[&str], envs: &[(&str, &str)]) -> Self {
-        let args: Vec<String> = args.into_iter().map(|x| x.to_string()).collect();
-        let envs: HashMap<String, String> = envs
-            .into_iter()
-            .map(|x| (x.0.to_string(), x.1.to_string()))
-            .collect();
-
+impl<'a> ChildProcess<'a> {
+    pub fn new(cmd: &'a str, args: &'a [&'a str], envs: &'a [(&'a str, &'a str)]) -> Self {
+        let envs = envs.iter().cloned().collect();
         ChildProcess {
             cmd: cmd.into(),
             args,
@@ -28,7 +23,7 @@ impl ChildProcess {
 
     pub fn run_shell_command(&self) -> Result<ExitStatus> {
         Command::new(&self.cmd)
-            .args(&self.args)
+            .args(self.args)
             .envs(&self.envs)
             .spawn()?
             .wait()

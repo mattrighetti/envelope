@@ -44,7 +44,7 @@ pub async fn edit(db: &EnvelopeDb, env: &str) -> Result<()> {
         writeln!(&mut kv_list, "{}={}", &env.key, &env.value)?;
     }
 
-    let bytes = editor::spawn_with(&kv_list[..])?;
+    let bytes = editor::spawn_with(&kv_list)?;
     let EditorData { delete, upsert } = parse(BufReader::new(&bytes));
 
     for k in delete {
