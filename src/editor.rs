@@ -1,12 +1,12 @@
 use std::{
     env::temp_dir,
-    fs::{File, OpenOptions},
-    io::{BufReader, Result, Write},
+    fs::OpenOptions,
+    io::{Read, Result, Write},
 };
 
-use crate::{err, std_err, subproc::ChildProcess};
+use crate::{std_err, subproc::ChildProcess};
 
-fn envelope_editor() -> String {
+fn editor_cmd() -> String {
     let editor = "vi";
 
     if let Some(e) = std::env::var_os("ENVELOPE_EDITOR") {
@@ -24,44 +24,25 @@ fn envelope_editor() -> String {
     editor.to_string()
 }
 
-fn writer() -> Result<File> {
+pub fn spawn_with(data: &[u8]) -> Result<Vec<u8>> {
+    let editor = editor_cmd();
     let pb = temp_dir().join("ENVELOPE_EDITMSG");
 
-    OpenOptions::new()
+    let mut file = OpenOptions::new()
         .write(true)
         .read(true)
         .create(true)
         .truncate(true)
-        .open(pb)
-}
-
-fn reader() -> Result<BufReader<File>> {
-    let pb = temp_dir().join("ENVELOPE_EDITMSG");
-    let file = OpenOptions::new().read(true).open(pb)?;
-
-    Ok(BufReader::new(file))
-}
-
-fn prepare_file(data: &[u8]) -> Result<()> {
-    let mut file = writer()?;
+        .open(&pb)?;
     file.write_all(data)?;
-    file.write(b"\n\n")?;
-    file.write(b"# Comment variables to remove them")?;
+    file.write(b"\n\n# Comment variables to remove them")?;
 
-    Ok(())
-}
+    let pb = pb.to_str().unwrap();
+    let cmd = ChildProcess::new(&editor, &[pb], &[]);
+    cmd.run_shell_command()
+        .map_err(|e| std_err!("error running child process: {}", e))?;
 
-pub fn spawn_with(data: &[u8]) -> Result<BufReader<File>> {
-    prepare_file(data)?;
-
-    let editor = envelope_editor();
-    if let Some(pb) = temp_dir().join("ENVELOPE_EDITMSG").to_str() {
-        let cmd = ChildProcess::new(&editor, &[pb], &[]);
-        cmd.run_shell_command()
-            .map_err(|e| std_err!("error running child process: {}", e))?;
-    } else {
-        return err!("cannot run editor");
-    }
-
-    reader()
+    let mut buf = vec![];
+    file.read_to_end(&mut buf).unwrap();
+    Ok(buf)
 }

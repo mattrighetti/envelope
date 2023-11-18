@@ -50,7 +50,7 @@ mod test {
     use crate::db::{test_db, EnvironmentRow};
     use std::io::BufReader;
 
-    fn stdin_input(s: &str) -> BufReader<&[u8]> {
+    pub fn stdin_input(s: &str) -> BufReader<&[u8]> {
         BufReader::new(s.as_bytes())
     }
 

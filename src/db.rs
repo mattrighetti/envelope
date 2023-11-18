@@ -19,12 +19,6 @@ pub struct EnvironmentRow {
     pub created_at: i32,
 }
 
-impl EnvironmentRow {
-    pub fn kv_string(&self) -> String {
-        format!("{}={}", self.key, self.value)
-    }
-}
-
 pub fn is_present() -> bool {
     if let Ok(current_dir) = env::current_dir() {
         let envelope_fs = current_dir.join(".envelope");
