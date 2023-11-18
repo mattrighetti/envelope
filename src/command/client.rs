@@ -1,12 +1,14 @@
 use clap::Subcommand;
-use std::io::{Error, ErrorKind, Result};
+use std::io::Result;
 
+use crate::std_err;
 use crate::{db::EnvelopeDb, ops};
 
 mod add;
 mod delete;
 mod drop;
 mod duplicate;
+mod edit;
 mod export;
 mod import;
 mod list;
@@ -28,6 +30,8 @@ pub enum EnvelopeCmd {
 
     Export(export::Cmd),
 
+    Edit(edit::Cmd),
+
     /// Initialize envelope
     Init,
 
@@ -42,7 +46,7 @@ impl EnvelopeCmd {
     pub async fn run(self) -> Result<()> {
         let db = EnvelopeDb::load(matches!(self, Self::Init))
             .await
-            .map_err(|e| Error::new(ErrorKind::Other, e.to_string()))?;
+            .map_err(|e| std_err!("{}", e.to_string()))?;
 
         match self {
             Self::Add(add) => add.run(&db).await?,
@@ -51,6 +55,7 @@ impl EnvelopeCmd {
             Self::Drop(drop) => drop.run(&db).await?,
             Self::Duplicate(duplicate) => duplicate.run(&db).await?,
             Self::Export(export) => export.run(&db).await?,
+            Self::Edit(edit) => edit.run(&db).await?,
             Self::Import(import) => import.run(&db).await?,
             Self::List(list) => list.run(&db).await?,
             Self::Sync(sync) => sync.run(&db).await?,

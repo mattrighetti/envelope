@@ -1,8 +1,8 @@
 use clap::Parser;
 
-use std::io::{Error, ErrorKind, Result};
+use std::io::Result;
 
-use crate::{db::EnvelopeDb, ops};
+use crate::{db::EnvelopeDb, err, ops};
 
 /// Sync environment with another environment
 #[derive(Parser)]
@@ -21,7 +21,7 @@ pub struct Cmd {
 impl Cmd {
     pub async fn run(&self, db: &EnvelopeDb) -> Result<()> {
         if self.source == self.target {
-            return Err(Error::new(ErrorKind::Other, "can't sync the same env"));
+            return err!("can't sync the same env");
         }
 
         ops::sync(db, &self.source, &self.target, false).await

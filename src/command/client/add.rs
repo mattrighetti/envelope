@@ -1,8 +1,8 @@
 use clap::Parser;
 
-use std::io::{BufRead, Error, ErrorKind, Result, Write};
+use std::io::{BufRead, Result, Write};
 
-use crate::{db::EnvelopeDb, ops};
+use crate::{db::EnvelopeDb, err, ops};
 
 /// Add environment variables to a specific environment
 #[derive(Parser)]
@@ -24,10 +24,7 @@ pub struct Cmd {
 impl Cmd {
     pub async fn run(&self, db: &EnvelopeDb) -> Result<()> {
         if self.stdin && self.value.is_some() {
-            return Err(Error::new(
-                ErrorKind::Other,
-                "can't specify a value if you're reading from stdin",
-            ));
+            return err!("can't specify a value if you're reading from stdin");
         }
 
         let mut value = String::new();
