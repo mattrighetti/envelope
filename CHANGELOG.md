@@ -2,6 +2,27 @@
 All notable changes to this project will be documented in this file. See [conventional commits](https://www.conventionalcommits.org/) for commit guidelines.
 
 - - -
+## 0.3.2 - 2023-11-18
+#### Bug Fixes
+- use token-tree for err macro - (314e797) - Mattia Righetti
+- fix delete var in editor - (9c14bf3) - Mattia Righetti
+#### Features
+- edit environs from editor - (e7847ff) - Mattia Righetti
+#### Miscellaneous Chores
+- add install instructions - (e0a6d32) - Mattia Righetti
+- update readme - (80a1362) - Mattia Righetti
+#### Refactoring
+- misc refactoring - (2142bf8) - Mattia Righetti
+- impl std_err and err macro - (0be0ba1) - Mattia Righetti
+- misc refactoring - (533a86e) - Mattia Righetti
+- add err macros - (16a2e2a) - Mattia Righetti
+- alphabetically order sub-commands - (5f60487) - Mattia Righetti
+- isolated db queries in EnvelopeDb wrapper - (495deef) - Mattia Righetti
+#### Tests
+- add editor file parse and test - (86a1763) - Mattia Righetti
+
+- - -
+
 ## 0.3.1 - 2023-10-29
 #### Bug Fixes
 - exit with status code 1 if err occurs - (2069f1f) - Mattia Righetti
