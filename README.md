@@ -1,7 +1,7 @@
 # envelope
 envelope is a modern environment variables manager.
 
-```sh
+```
 A modern environment variables manager
 
 Usage: envelope [COMMAND]
