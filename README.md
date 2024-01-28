@@ -7,15 +7,16 @@ A modern environment variables manager
 Usage: envelope [COMMAND]
 
 Commands:
-  init       Initialize envelope
-  check      Check which environment is currently active
   add        Add environment variables to a specific environment
-  list       List saved environments and/or their variables
-  import     Import environment variables
+  check      Check which environment is currently exported
   delete     Delete environment variables
-  export     Export environment variables
-  duplicate  Create a copy of another environment
   drop       Drop environment
+  duplicate  Create a copy of another environment
+  export     Export environment variables
+  edit
+  init       Initialize envelope
+  import     Import environment variables
+  list       List saved environments and/or their variables
   sync       Sync environment with another environment
   help       Print this message or the help of the given subcommand(s)
 
