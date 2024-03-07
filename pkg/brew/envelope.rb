@@ -17,12 +17,5 @@ class Envelope < Formula
 
   def install
     bin.install "envelope"
-
-    args = %w[
-      --standalone
-      --to=man
-    ]
-    system "pandoc", *args, "man/envelope.1.md", "-o", "envelope.1"
-    man1.install "envelope.1"
   end
 end

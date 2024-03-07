@@ -107,7 +107,7 @@ jobs:
         run: |
           staging="envelope-${{ needs.create-release.outputs.evl_version }}-${{ matrix.target }}"
           mkdir -p "$staging"
-          cp {README.md,CHANGELOG.md} "$staging/"
+          cp {README.md,CHANGELOG.md,man/envelope.1.md} "$staging/"
           cp "target/${{ matrix.target }}/release/envelope" "$staging/"
 
           tar czf "$staging.tar.gz" "$staging"
