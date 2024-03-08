@@ -9,6 +9,6 @@ readme = "README.md"
 [dependencies]
 clap = { version = "4", features = ["derive"] }
 prettytable-rs = "0.10.0"
-tokio = { version = "1.32.0", features = ["macros", "rt"] }
+tokio = { version = "1", features = ["macros", "rt"] }
 sqlx = { version = "0.7", features = ["sqlite", "runtime-tokio"] }
 

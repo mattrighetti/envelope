@@ -71,7 +71,7 @@ jobs:
           rust: nightly
     steps:
       - name: Checkout repo
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Install packages (Ubuntu)
         if: matrix.os == 'ubuntu-latest'
@@ -117,7 +117,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - name: Checkout repository
-      uses: actions/checkout@v3
+      uses: actions/checkout@v4
     - name: Install Rust
       uses: dtolnay/rust-toolchain@master
       with:
@@ -130,7 +130,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
       - name: Install Rust
         uses: dtolnay/rust-toolchain@master
         with:
