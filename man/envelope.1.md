@@ -41,6 +41,21 @@ store your enviroment variables
 : Returns all the environments that are active by comparing active enviroment
 varibles in the current process
 
+`envelope edit dev-local`
+: Edit variables in default editor
+
+`envelope export dev-local`
+: Creates a .env file with all the environment variables stored in dev-local
+
+`envelope drop dev-local`
+: Hard deletes from the database every environment variables stored in dev-local
+
+`envelope add dev-local <KEY> <VALUE>`
+: Adds environment variable KEY=VALUE in dev-local
+
+`envelope delete dev-local <KEY> <VALUE>`
+: Deletes environment variable KEY=VALUE in dev-local
+
 EXIT STATUSES
 =============
 
