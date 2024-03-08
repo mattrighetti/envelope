@@ -2,6 +2,24 @@
 All notable changes to this project will be documented in this file. See [conventional commits](https://www.conventionalcommits.org/) for commit guidelines.
 
 - - -
+## 0.3.3 - 2024-03-08
+#### Bug Fixes
+- add man page to staging step - (1359ebe) - Mattia Righetti
+#### Continuous Integration
+- bump to checkout v4 - (9914712) - Mattia Righetti
+#### Miscellaneous Chores
+- **(brew)** add brew formula - (8d03222) - Mattia Righetti
+- **(ci)** bump rust to 1.74 - (7fb5ab1) - Mattia Righetti
+- **(deps)** bump clap to major 4.x - (ad08c85) - Mattia Righetti
+- **(deps)** update crates - (9b3ef45) - Mattia Righetti
+- update man page with cog - (00d55f8) - Mattia Righetti
+- update readme - (5ee1850) - Mattia Righetti
+- update readme - (31051c7) - Mattia Righetti
+#### Refactoring
+- more examples in man page - (db23517) - Mattia Righetti
+
+- - -
+
 ## 0.3.2 - 2023-11-18
 #### Bug Fixes
 - use token-tree for err macro - (314e797) - Mattia Righetti

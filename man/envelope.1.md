@@ -1,4 +1,4 @@
-% envelope(1) v0.3.0
+% envelope(1) v0.3.3
 
 <!-- This is the envelope(1) man page, written in Markdown. -->
 <!-- and the man page will appear in the ‘target’ directory. -->
