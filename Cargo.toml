@@ -11,4 +11,5 @@ clap = { version = "4", features = ["derive"] }
 prettytable-rs = "0.10.0"
 tokio = { version = "1", features = ["macros", "rt"] }
 sqlx = { version = "0.7", features = ["sqlite", "runtime-tokio"] }
-
+sea-query = "0"
+sea-query-binder = { version = "0", features = [ "sqlx-sqlite", "with-uuid" ] }
