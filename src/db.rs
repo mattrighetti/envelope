@@ -1,10 +1,28 @@
-use sqlx::{QueryBuilder, Sqlite, SqlitePool};
+use sea_query::Alias;
+use sea_query::Asterisk;
+use sea_query::Expr;
+use sea_query::Keyword;
+use sea_query::Func;
+use sea_query::Order;
+use sea_query::Query;
+use sea_query::SqliteQueryBuilder;
+use sea_query_binder::SqlxBinder;
+use sqlx::SqlitePool;
 use std::env;
 use std::io;
 
 use crate::std_err;
 
 pub(crate) type EnvelopeResult<T> = Result<T, Box<dyn std::error::Error>>;
+
+#[derive(Debug, sea_query::Iden)]
+pub enum Environments {
+    Table,
+    Env,
+    Key,
+    Value,
+    CreatedAt,
+}
 
 #[derive(Debug, Clone, sqlx::FromRow)]
 pub struct Environment {
@@ -77,24 +95,30 @@ impl EnvelopeDb {
     }
 
     pub async fn get_all_env_vars(&self) -> io::Result<Vec<EnvironmentRow>> {
-        let rows = sqlx::query_as::<_, EnvironmentRow>(
-            r"SELECT *
-            FROM environments
-            GROUP BY env, key
-            HAVING MAX(created_at)",
-        )
-        .fetch_all(&self.db)
-        .await
-        .map_err(|e| std_err!("db error: {}", e))?;
+        let (sql, _) = Query::select()
+            .from(Environments::Table)
+            .column(Asterisk)
+            .group_by_columns([Environments::Env, Environments::Key])
+            .and_having(Expr::col(Environments::CreatedAt).max())
+            .build_sqlx(SqliteQueryBuilder);
+
+        let rows = sqlx::query_as::<_, EnvironmentRow>(&sql)
+            .fetch_all(&self.db)
+            .await
+            .map_err(|e| std_err!("db error: {}", e))?;
 
         Ok(rows)
     }
 
     pub async fn insert(&self, env: &str, key: &str, var: &str) -> io::Result<()> {
-        sqlx::query("INSERT INTO environments(env,key,value) VALUES (?, upper(?), ?);")
-            .bind(env)
-            .bind(key)
-            .bind(var)
+        let (sql, values) = Query::insert()
+            .into_table(Environments::Table)
+            .columns([Environments::Env, Environments::Key, Environments::Value])
+            .values([env.into(), Func::upper(key).into(), var.into()])
+            .unwrap()
+            .build_sqlx(SqliteQueryBuilder);
+
+        sqlx::query_with(&sql, values)
             .execute(&self.db)
             .await
             .map_err(|e| std_err!("db error: {}", e))?;
@@ -103,8 +127,13 @@ impl EnvelopeDb {
     }
 
     pub async fn delete_env(&self, env: &str) -> io::Result<()> {
-        sqlx::query("UPDATE environments SET value = NULL WHERE env = ?")
-            .bind(env)
+        let (sql, values) = Query::update()
+            .table(Environments::Table)
+            .values([(Environments::Value, Keyword::Null.into())])
+            .and_where(Expr::col(Environments::Env).eq(env))
+            .build_sqlx(SqliteQueryBuilder);
+
+        sqlx::query_with(&sql, values)
             .execute(&self.db)
             .await
             .map_err(|e| std_err!("db error: {}", e))?;
@@ -113,8 +142,13 @@ impl EnvelopeDb {
     }
 
     pub async fn delete_var_all(&self, key: &str) -> io::Result<()> {
-        sqlx::query("UPDATE environments SET value = NULL WHERE key = ?")
-            .bind(key)
+        let (sql, values) = Query::update()
+            .table(Environments::Table)
+            .values([(Environments::Value, Keyword::Null.into())])
+            .and_where(Expr::col(Environments::Key).eq(key))
+            .build_sqlx(SqliteQueryBuilder);
+
+        sqlx::query_with(&sql, values)
             .execute(&self.db)
             .await
             .map_err(|e| std_err!("db error: {}", e))?;
@@ -123,9 +157,14 @@ impl EnvelopeDb {
     }
 
     pub async fn delete_var_for_env(&self, env: &str, key: &str) -> io::Result<()> {
-        sqlx::query("UPDATE environments SET value = NULL WHERE env = ? AND key = ?")
-            .bind(env)
-            .bind(key)
+        let (sql, values) = Query::update()
+            .table(Environments::Table)
+            .values([(Environments::Value, Keyword::Null.into())])
+            .and_where(Expr::col(Environments::Key).eq(key))
+            .and_where(Expr::col(Environments::Env).eq(env))
+            .build_sqlx(SqliteQueryBuilder);
+
+        sqlx::query_with(&sql, values)
             .execute(&self.db)
             .await
             .map_err(|e| std_err!("db error: {}", e))?;
@@ -134,8 +173,12 @@ impl EnvelopeDb {
     }
 
     pub async fn drop_env(&self, env: &str) -> io::Result<()> {
-        sqlx::query("DELETE FROM environments WHERE env = ?")
-            .bind(env)
+        let (sql, values) = Query::delete()
+            .from_table(Environments::Table)
+            .and_where(Expr::col(Environments::Env).eq(env))
+            .build_sqlx(SqliteQueryBuilder);
+
+        sqlx::query_with(&sql, values)
             .execute(&self.db)
             .await
             .map_err(|e| std_err!("db error: {}", e))?;
@@ -144,56 +187,92 @@ impl EnvelopeDb {
     }
 
     pub async fn duplicate(&self, src_env: &str, tgt_env: &str) -> io::Result<()> {
-        sqlx::query(
-            r"INSERT INTO environments(env,key,value)
-            SELECT ?2, key, value
-            FROM environments WHERE env = ?1 AND value NOT NULL
-            GROUP BY env, key
-            HAVING MAX(created_at)
-            ORDER BY env, key;",
-        )
-        .bind(src_env)
-        .bind(tgt_env)
-        .execute(&self.db)
-        .await
-        .map_err(|e| std_err!("db error: {}", e))?;
+        let select = Query::select()
+            .from(Environments::Table)
+            .expr(Expr::val(tgt_env))
+            .column(Environments::Key)
+            .column(Environments::Value)
+            .and_where(Expr::col(Environments::Env).eq(src_env))
+            .and_where(Expr::col(Environments::Value).is_not_null())
+            .group_by_columns([Environments::Env, Environments::Key])
+            .and_having(Expr::col(Environments::CreatedAt).max())
+            .order_by_columns([
+                (Environments::Env, Order::Desc),
+                (Environments::Key, Order::Desc),
+            ])
+            .to_owned();
+
+        let (sql, values) = Query::insert()
+            .into_table(Environments::Table)
+            .columns([Environments::Env, Environments::Key, Environments::Value])
+            .select_from(select)
+            .unwrap()
+            .build_sqlx(SqliteQueryBuilder);
+
+        sqlx::query_with(&sql, values)
+            .execute(&self.db)
+            .await
+            .map_err(|e| std_err!("db error: {}", e))?;
 
         Ok(())
     }
 
     pub async fn list_var_in_env(&self, env: &str) -> io::Result<Vec<EnvironmentRow>> {
-        sqlx::query_as::<_, EnvironmentRow>(
-            r"SELECT env, key, value, created_at
-            FROM environments
-            WHERE env = ?
-            GROUP BY env, key
-            HAVING MAX(created_at)
-            ORDER BY env, key",
-        )
-        .bind(env)
-        .fetch_all(&self.db)
-        .await
-        .map_err(|e| std_err!("db error: {}", e))
+        let (sql, values) = Query::select()
+            .from(Environments::Table)
+            .column(Asterisk)
+            .and_where(Expr::col(Environments::Env).eq(env))
+            .group_by_columns([Environments::Env, Environments::Key])
+            .and_having(Expr::col(Environments::CreatedAt).max())
+            .order_by_columns([
+                (Environments::Env, Order::Desc),
+                (Environments::Key, Order::Desc),
+            ])
+            .build_sqlx(SqliteQueryBuilder);
+
+        sqlx::query_as_with(&sql, values)
+            .fetch_all(&self.db)
+            .await
+            .map_err(|e| std_err!("db error: {}", e))
     }
 
     pub async fn sync(&self, src_env: &str, tgt_env: &str, overwrite: bool) -> io::Result<()> {
-        let mut query_builder: QueryBuilder<Sqlite> = QueryBuilder::new(
-            r"INSERT INTO environments (env, key, value)
-            SELECT ?2, key, value
-            FROM environments
-            WHERE env = ?1 ",
-        );
+        let mut select = Query::select()
+            .from(Environments::Table)
+            .expr(Expr::val(tgt_env))
+            .column(Environments::Key)
+            .column(Environments::Value)
+            .and_where(Expr::col(Environments::Env).eq(src_env))
+            .group_by_col(Environments::Key)
+            .and_having(Expr::col(Environments::CreatedAt).max())
+            .order_by_columns([
+                (Environments::Env, Order::Desc),
+                (Environments::Key, Order::Desc),
+            ])
+            .to_owned();
 
         if !overwrite {
-            query_builder.push(r" AND key NOT IN (SELECT key FROM environments WHERE env = ?2 GROUP BY key HAVING MAX(created_at)) ");
+            select.and_where(
+                Expr::col(Environments::Key).not_in_subquery(
+                    Query::select()
+                        .from(Environments::Table)
+                        .column(Environments::Key)
+                        .and_where(Expr::col(Environments::Env).eq(tgt_env))
+                        .group_by_col(Environments::Key)
+                        .and_having(Expr::col(Environments::CreatedAt).max())
+                        .to_owned(),
+                ),
+            );
         }
 
-        query_builder.push("GROUP BY key HAVING MAX(created_at);");
+        let (sql, values) = Query::insert()
+            .into_table(Environments::Table)
+            .columns([Environments::Env, Environments::Key, Environments::Value])
+            .select_from(select)
+            .unwrap()
+            .build_sqlx(SqliteQueryBuilder);
 
-        query_builder
-            .build()
-            .bind(src_env)
-            .bind(tgt_env)
+        sqlx::query_with(&sql, values)
             .execute(&self.db)
             .await
             .map_err(|e| std_err!("db error: {}", e))?;
@@ -206,36 +285,44 @@ impl EnvelopeDb {
         env: &str,
         truncate: Truncate,
     ) -> io::Result<Vec<EnvironmentRow>> {
-        let mut query_builder: QueryBuilder<Sqlite> = QueryBuilder::new(r"SELECT env, key, ");
+        let mut select = Query::select()
+            .from(Environments::Table)
+            .column(Environments::Env)
+            .column(Environments::Key)
+            .column(Environments::CreatedAt)
+            .and_where(Expr::col(Environments::Value).is_not_null())
+            .and_where(Expr::col(Environments::Env).eq(env))
+            .group_by_col(Environments::Key)
+            .and_having(Expr::col(Environments::CreatedAt).max())
+            .order_by_columns([
+                (Environments::Env, Order::Desc),
+                (Environments::Key, Order::Desc),
+            ])
+            .to_owned();
 
         match truncate {
-            Truncate::None => query_builder.push("value"),
-            Truncate::Range(x, y) => {
-                query_builder.push(format!("substr(value, {}, {}) as value", x, y))
-            }
+            Truncate::None => select.column(Environments::Value),
+            Truncate::Range(x, y) => select.expr(
+                Expr::cust(format!("substr(value, {}, {}) as value", x, y))
+                    .cast_as(Alias::new("value")),
+            ),
         };
 
-        query_builder.push(
-            r", created_at
-            FROM environments
-            WHERE value NOT NULL ",
-        );
-        query_builder.push("AND env =").push_bind(env);
-        query_builder.push(
-            r"GROUP BY env, key
-            HAVING MAX(created_at)
-            ORDER BY env, key;",
-        );
-
-        query_builder
-            .build_query_as()
+        let (sql, values) = select.build_sqlx(SqliteQueryBuilder);
+        sqlx::query_as_with(&sql, values)
             .fetch_all(&self.db)
             .await
             .map_err(|e| std_err!("db error: {}", e))
     }
 
     pub async fn list_environments(&self) -> io::Result<Vec<Environment>> {
-        sqlx::query_as::<_, Environment>("SELECT DISTINCT(env) FROM environments")
+        let (sql, _) = Query::select()
+            .from(Environments::Table)
+            .column(Environments::Env)
+            .distinct()
+            .build_sqlx(SqliteQueryBuilder);
+
+        sqlx::query_as(&sql)
             .fetch_all(&self.db)
             .await
             .map_err(|e| std_err!("db error: {}", e))
