@@ -2,6 +2,16 @@
 All notable changes to this project will be documented in this file. See [conventional commits](https://www.conventionalcommits.org/) for commit guidelines.
 
 - - -
+## 0.3.4 - 2024-04-28
+#### Bug Fixes
+- remove sync command - (cba997c) - Mattia Righetti
+#### Miscellaneous Chores
+- **(deps)** add sea-query + binder - (4053f47) - Mattia Righetti
+#### Refactoring
+- moved raw sql strings to sea-query - (09a851f) - Mattia Righetti
+
+- - -
+
 ## 0.3.3 - 2024-03-08
 #### Bug Fixes
 - add man page to staging step - (1359ebe) - Mattia Righetti
