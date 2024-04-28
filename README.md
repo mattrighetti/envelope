@@ -17,7 +17,6 @@ Commands:
   init       Initialize envelope
   import     Import environment variables
   list       List saved environments and/or their variables
-  sync       Sync environment with another environment
   help       Print this message or the help of the given subcommand(s)
 
 Options:
