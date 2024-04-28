@@ -12,7 +12,6 @@ mod edit;
 mod export;
 mod import;
 mod list;
-mod sync;
 
 #[derive(Subcommand)]
 #[command(infer_subcommands = true)]
@@ -38,8 +37,6 @@ pub enum EnvelopeCmd {
     Import(import::Cmd),
 
     List(list::Cmd),
-
-    Sync(sync::Cmd),
 }
 
 impl EnvelopeCmd {
@@ -58,7 +55,6 @@ impl EnvelopeCmd {
             Self::Edit(edit) => edit.run(&db).await?,
             Self::Import(import) => import.run(&db).await?,
             Self::List(list) => list.run(&db).await?,
-            Self::Sync(sync) => sync.run(&db).await?,
             _ => {}
         }
 

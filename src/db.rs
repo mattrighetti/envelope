@@ -236,50 +236,6 @@ impl EnvelopeDb {
             .map_err(|e| std_err!("db error: {}", e))
     }
 
-    pub async fn sync(&self, src_env: &str, tgt_env: &str, overwrite: bool) -> io::Result<()> {
-        let mut select = Query::select()
-            .from(Environments::Table)
-            .expr(Expr::val(tgt_env))
-            .column(Environments::Key)
-            .column(Environments::Value)
-            .and_where(Expr::col(Environments::Env).eq(src_env))
-            .group_by_col(Environments::Key)
-            .and_having(Expr::col(Environments::CreatedAt).max())
-            .order_by_columns([
-                (Environments::Env, Order::Desc),
-                (Environments::Key, Order::Desc),
-            ])
-            .to_owned();
-
-        if !overwrite {
-            select.and_where(
-                Expr::col(Environments::Key).not_in_subquery(
-                    Query::select()
-                        .from(Environments::Table)
-                        .column(Environments::Key)
-                        .and_where(Expr::col(Environments::Env).eq(tgt_env))
-                        .group_by_col(Environments::Key)
-                        .and_having(Expr::col(Environments::CreatedAt).max())
-                        .to_owned(),
-                ),
-            );
-        }
-
-        let (sql, values) = Query::insert()
-            .into_table(Environments::Table)
-            .columns([Environments::Env, Environments::Key, Environments::Value])
-            .select_from(select)
-            .unwrap()
-            .build_sqlx(SqliteQueryBuilder);
-
-        sqlx::query_with(&sql, values)
-            .execute(&self.db)
-            .await
-            .map_err(|e| std_err!("db error: {}", e))?;
-
-        Ok(())
-    }
-
     pub async fn list_all_var_in_env(
         &self,
         env: &str,
