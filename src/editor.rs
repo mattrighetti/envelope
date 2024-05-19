@@ -1,5 +1,5 @@
 use std::{
-    env::temp_dir,
+    env,
     fs::OpenOptions,
     io::{Read, Result, Write},
 };
@@ -26,7 +26,7 @@ fn editor_cmd() -> String {
 
 pub fn spawn_with(data: &[u8]) -> Result<Vec<u8>> {
     let editor = editor_cmd();
-    let pb = temp_dir().join("ENVELOPE_EDITMSG");
+    let pb = env::current_dir()?.join(".ENVELOPE_EDITMSG");
 
     let mut file = OpenOptions::new()
         .write(true)
@@ -44,5 +44,6 @@ pub fn spawn_with(data: &[u8]) -> Result<Vec<u8>> {
 
     let mut buf = vec![];
     file.read_to_end(&mut buf).unwrap();
+    std::fs::remove_file(pb)?;
     Ok(buf)
 }
