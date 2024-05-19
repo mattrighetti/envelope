@@ -2,6 +2,14 @@
 All notable changes to this project will be documented in this file. See [conventional commits](https://www.conventionalcommits.org/) for commit guidelines.
 
 - - -
+## 0.3.5 - 2024-05-19
+#### Bug Fixes
+- remove whitespace from value when adding variable - (2564e1f) - Mattia Righetti
+#### Miscellaneous Chores
+- update README - (bb9fd0b) - Mattia Righetti
+
+- - -
+
 ## 0.3.4 - 2024-04-28
 #### Bug Fixes
 - remove sync command - (cba997c) - Mattia Righetti
