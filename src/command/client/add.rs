@@ -41,6 +41,6 @@ impl Cmd {
             }
         }
 
-        ops::add_var(db, &self.env, &self.key, &value).await
+        ops::add_var(db, &self.env, &self.key, value.trim_end()).await
     }
 }
