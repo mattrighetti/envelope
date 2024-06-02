@@ -7,7 +7,7 @@ use std::{
 use crate::{std_err, subproc::ChildProcess};
 
 fn editor_cmd() -> String {
-    let editor = "nvim";
+    let editor = "vim";
 
     if let Some(e) = std::env::var_os("ENVELOPE_EDITOR") {
         if let Some(e) = e.to_str() {
