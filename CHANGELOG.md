@@ -2,6 +2,13 @@
 All notable changes to this project will be documented in this file. See [conventional commits](https://www.conventionalcommits.org/) for commit guidelines.
 
 - - -
+## 0.3.6 - 2024-06-02
+#### Bug Fixes
+- re-open file after editor is done with it - (c93c0ca) - Mattia Righetti
+- create file in current dir and remove it afterwards - (27dba78) - Mattia Righetti
+
+- - -
+
 ## 0.3.5 - 2024-05-19
 #### Bug Fixes
 - remove whitespace from value when adding variable - (2564e1f) - Mattia Righetti
