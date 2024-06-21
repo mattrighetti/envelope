@@ -1,4 +1,4 @@
-% envelope(1) v0.3.6
+% envelope(1) v0.3.7
 
 <!-- This is the envelope(1) man page, written in Markdown. -->
 <!-- and the man page will appear in the ‘target’ directory. -->
@@ -29,26 +29,28 @@ store your enviroment variables
 : Imports variables from .env file into environment named 'dev'
 
 `envelope list`
-: Lists all enviroments in the tool
+: Lists all enviroments
 
 `envelope list dev`
-: Lists all enviroment variables in the 'dev' enviroment
+: Lists all enviroment variables in the 'dev' environment
 
 `envelope duplicate dev dev-local`
-: Creates a new 'dev-local' environment with the same variables that are stored in 'dev'
+: Creates a new 'dev-local' environment with the same variables stored in 'dev'
 
 `envelope check`
 : Returns all the environments that are active by comparing active enviroment
 varibles in the current process
 
 `envelope edit dev-local`
-: Edit variables in default editor
+: Edit variables of 'dev-local' in default editor. If you want to specify a
+different editor you can do so by using the `ENVELOPE_EDITOR` environment
+variable.
 
 `envelope export dev-local`
 : Creates a .env file with all the environment variables stored in dev-local
 
 `envelope drop dev-local`
-: Hard deletes from the database every environment variables stored in dev-local
+: Hard delete from the database every environment variables stored in dev-local
 
 `envelope add dev-local <KEY> <VALUE>`
 : Adds environment variable KEY=VALUE in dev-local

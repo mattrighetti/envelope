@@ -2,6 +2,14 @@
 All notable changes to this project will be documented in this file. See [conventional commits](https://www.conventionalcommits.org/) for commit guidelines.
 
 - - -
+## 0.3.7 - 2024-06-21
+#### Bug Fixes
+- vim default editor - (91d2893) - Mattia Righetti
+#### Documentation
+- misc docs updates - (9a2562a) - Mattia Righetti
+
+- - -
+
 ## 0.3.6 - 2024-06-02
 #### Bug Fixes
 - re-open file after editor is done with it - (c93c0ca) - Mattia Righetti
