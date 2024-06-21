@@ -2,6 +2,15 @@
 All notable changes to this project will be documented in this file. See [conventional commits](https://www.conventionalcommits.org/) for commit guidelines.
 
 - - -
+## 0.3.8 - 2024-06-21
+#### Bug Fixes
+- return error if user is trying to list non-existent variable - (d5e2576) - Mattia Righetti
+- output errors on stderr - (9489c4b) - Mattia Righetti
+#### Features
+- impl check_env_exists to check if env is present in db - (d653f18) - Mattia Righetti
+
+- - -
+
 ## 0.3.7 - 2024-06-21
 #### Bug Fixes
 - vim default editor - (91d2893) - Mattia Righetti
