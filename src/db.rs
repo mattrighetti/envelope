@@ -1,5 +1,6 @@
 use sea_query::Alias;
 use sea_query::Asterisk;
+use sea_query::ConditionalStatement;
 use sea_query::Expr;
 use sea_query::Keyword;
 use sea_query::Func;
@@ -84,6 +85,20 @@ impl EnvelopeDb {
         let db = init().await?;
 
         Ok(EnvelopeDb { db })
+    }
+
+    pub async fn check_env_exists(&self, env: &str) -> io::Result<()> {
+        let (sql, value) = Query::select()
+            .from(Environments::Table)
+            .column(Environments::Env)
+            .distinct()
+            .and_where(Expr::col(Environments::Env).eq(env))
+            .build_sqlx(SqliteQueryBuilder);
+
+        sqlx::query_as_with(&sql, value)
+            .fetch_one(&self.db)
+            .await
+            .map_err(|e| std_err!("db error: {}", e))
     }
 
     pub async fn load(init: bool) -> EnvelopeResult<Self> {
@@ -221,6 +236,7 @@ impl EnvelopeDb {
         let (sql, values) = Query::select()
             .from(Environments::Table)
             .column(Asterisk)
+            .and_where(Expr::col(Environments::Value).is_not_null())
             .and_where(Expr::col(Environments::Env).eq(env))
             .group_by_columns([Environments::Env, Environments::Key])
             .and_having(Expr::col(Environments::CreatedAt).max())
