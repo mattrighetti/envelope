@@ -1,6 +1,5 @@
 use sea_query::Alias;
 use sea_query::Asterisk;
-use sea_query::ConditionalStatement;
 use sea_query::Expr;
 use sea_query::Keyword;
 use sea_query::Func;

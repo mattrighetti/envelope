@@ -1,4 +1,5 @@
 use crate::db::{EnvelopeDb, Environment, EnvironmentRow, Truncate};
+use crate::std_err;
 
 use prettytable::{row, Table};
 
@@ -45,6 +46,10 @@ impl From<EnvRows> for Table {
 }
 
 pub async fn list(db: &EnvelopeDb, env: &str, truncate: Truncate) -> Result<()> {
+    db.check_env_exists(&env)
+        .await
+        .map_err(|_| std_err!("env {} does not exist", env))?;
+
     let envs: Vec<EnvironmentRow> = db.list_all_var_in_env(env, truncate).await?;
     if !envs.is_empty() {
         Table::from(EnvRows(envs)).printstd();
@@ -54,6 +59,10 @@ pub async fn list(db: &EnvelopeDb, env: &str, truncate: Truncate) -> Result<()> 
 }
 
 pub async fn list_raw<W: Write>(writer: &mut W, db: &EnvelopeDb, env: &str) -> Result<()> {
+    db.check_env_exists(&env)
+        .await
+        .map_err(|_| std_err!("env {} does not exist", env))?;
+
     let envs: Vec<EnvironmentRow> = db.list_all_var_in_env(env, Truncate::None).await?;
     for env in envs {
         writeln!(writer, "{}={}", &env.key, &env.value)?;
