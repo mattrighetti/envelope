@@ -48,7 +48,7 @@ impl Envelope {
 
 fn main() -> std::io::Result<()> {
     if let Err(err) = Envelope::parse().run() {
-        writeln!(std::io::stdout(), "error: {}", err)?;
+        writeln!(std::io::stderr(), "error: {}", err)?;
         std::process::exit(1);
     }
 
