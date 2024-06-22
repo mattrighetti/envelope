@@ -32,7 +32,7 @@ $ brew install envelope
 ```
 
 ## How it works
-envelope is basically a command line utility that leverages an SQLite database
+`envelope` is a command line utility that leverages an SQLite database
 to keep track of your enviroment variables so that you can easily switch between
 different configurations.
 
@@ -62,7 +62,6 @@ $ cat .env | envelope
 
 ### Import
 Import from .env file
-
 
 ```
 $ envelope import dev .env
@@ -124,6 +123,13 @@ $ envelope list dev
 Envelope always soft deletes environment variables, they are never actually
 deleted. You can however do a hard delete using the `drop` command
 
+### Drop
+Drops (hard deletes) an environment
+```sh
+$ envelope drop dev
+$ envelope list
+```
+
 ### Check
 Checks which environment is currently active
 ```sh
@@ -132,9 +138,3 @@ $ envelope check
 dev
 ```
 
-### Drop
-Drops (hard deletes) an environment
-```sh
-$ envelope drop dev
-$ envelope list
-```
