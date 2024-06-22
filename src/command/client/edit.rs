@@ -4,6 +4,7 @@ use clap::Parser;
 
 use crate::{db::EnvelopeDb, ops};
 
+/// Edit environment variables in editor
 #[derive(Parser)]
 pub struct Cmd {
     /// Environment that you wish to edit.

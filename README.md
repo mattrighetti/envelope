@@ -13,7 +13,7 @@ Commands:
   drop       Drop environment
   duplicate  Create a copy of another environment
   export     Export environment variables
-  edit
+  edit       Edit environment variables in editor
   init       Initialize envelope
   import     Import environment variables
   list       List saved environments and/or their variables
