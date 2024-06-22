@@ -1,15 +1,7 @@
-use sea_query::Alias;
-use sea_query::Asterisk;
-use sea_query::Expr;
-use sea_query::Keyword;
-use sea_query::Func;
-use sea_query::Order;
-use sea_query::Query;
-use sea_query::SqliteQueryBuilder;
+use sea_query::{Alias, Asterisk, Expr, Func, Order, Query, SqliteQueryBuilder};
 use sea_query_binder::SqlxBinder;
 use sqlx::SqlitePool;
-use std::env;
-use std::io;
+use std::{env, io};
 
 use crate::std_err;
 
@@ -86,6 +78,15 @@ impl EnvelopeDb {
         Ok(EnvelopeDb { db })
     }
 
+    pub async fn load(init: bool) -> EnvelopeResult<Self> {
+        if !is_present() && !init {
+            return Err("envelope is not initialized in current directory".into());
+        }
+
+        EnvelopeDb::init().await
+    }
+
+    /// checks if an environment exists in the database
     pub async fn check_env_exists(&self, env: &str) -> io::Result<()> {
         let (sql, value) = Query::select()
             .from(Environments::Table)
@@ -98,14 +99,6 @@ impl EnvelopeDb {
             .fetch_one(&self.db)
             .await
             .map_err(|e| std_err!("db error: {}", e))
-    }
-
-    pub async fn load(init: bool) -> EnvelopeResult<Self> {
-        if !is_present() && !init {
-            return Err("envelope is not initialized in current directory".into());
-        }
-
-        EnvelopeDb::init().await
     }
 
     pub async fn get_all_env_vars(&self) -> io::Result<Vec<EnvironmentRow>> {
@@ -124,6 +117,7 @@ impl EnvelopeDb {
         Ok(rows)
     }
 
+    /// inserts `key` and `value` to environment `env`
     pub async fn insert(&self, env: &str, key: &str, var: &str) -> io::Result<()> {
         let (sql, values) = Query::insert()
             .into_table(Environments::Table)
@@ -186,6 +180,7 @@ impl EnvelopeDb {
         Ok(())
     }
 
+    /// deletes environment from database entirely
     pub async fn drop_env(&self, env: &str) -> io::Result<()> {
         let (sql, values) = Query::delete()
             .from_table(Environments::Table)
@@ -286,6 +281,8 @@ impl EnvelopeDb {
             .map_err(|e| std_err!("db error: {}", e))
     }
 
+    // lists environments present in the database. Environments that only contain deletes variables
+    // will be listed as well.
     pub async fn list_environments(&self) -> io::Result<Vec<Environment>> {
         let (sql, _) = Query::select()
             .from(Environments::Table)
