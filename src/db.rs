@@ -272,13 +272,18 @@ impl EnvelopeDb {
     }
 
     pub async fn list_var_in_env(&self, env: &str) -> io::Result<Vec<EnvironmentRow>> {
-        let (sql, values) = Query::select()
-            .from(Environments::Table)
+        let select = Query::select()
             .column(Asterisk)
-            .and_where(Expr::col(Environments::Value).is_not_null())
+            .from(Environments::Table)
             .and_where(Expr::col(Environments::Env).eq(env))
             .group_by_columns([Environments::Env, Environments::Key])
             .and_having(Expr::col(Environments::CreatedAt).max())
+            .to_owned();
+
+        let (sql, values) = Query::select()
+            .from_subquery(select, Alias::new("T"))
+            .column(Asterisk)
+            .and_where(Expr::col(Environments::Value).is_not_null())
             .order_by_columns([
                 (Environments::Env, Order::Desc),
                 (Environments::Key, Order::Desc),
@@ -296,11 +301,21 @@ impl EnvelopeDb {
         env: &str,
         truncate: Truncate,
     ) -> io::Result<Vec<EnvironmentRow>> {
-        let mut select = Query::select()
+        let select = Query::select()
+            .column(Asterisk)
             .from(Environments::Table)
-            .column(Environments::Env)
-            .column(Environments::Key)
-            .column(Environments::CreatedAt)
+            .and_where(Expr::col(Environments::Env).eq(env))
+            .group_by_columns([Environments::Env, Environments::Key])
+            .and_having(Expr::col(Environments::CreatedAt).max())
+            .to_owned();
+
+        let mut select = Query::select()
+            .from_subquery(select, Alias::new("T"))
+            .columns([
+                Environments::Env,
+                Environments::Key,
+                Environments::CreatedAt,
+            ])
             .and_where(Expr::col(Environments::Value).is_not_null())
             .and_where(Expr::col(Environments::Env).eq(env))
             .group_by_col(Environments::Key)
