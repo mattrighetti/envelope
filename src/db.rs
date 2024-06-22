@@ -231,9 +231,18 @@ impl EnvelopeDb {
         Ok(())
     }
 
+    /// duplicates `src_env` in a new environment `tgt_env`
     pub async fn duplicate(&self, src_env: &str, tgt_env: &str) -> io::Result<()> {
         let select = Query::select()
+            .column(Asterisk)
             .from(Environments::Table)
+            .and_where(Expr::col(Environments::Env).eq(src_env))
+            .group_by_columns([Environments::Env, Environments::Key])
+            .and_having(Expr::col(Environments::CreatedAt).max())
+            .to_owned();
+
+        let select = Query::select()
+            .from_subquery(select, Alias::new("T"))
             .expr(Expr::val(tgt_env))
             .column(Environments::Key)
             .column(Environments::Value)
