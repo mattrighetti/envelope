@@ -2,6 +2,19 @@
 All notable changes to this project will be documented in this file. See [conventional commits](https://www.conventionalcommits.org/) for commit guidelines.
 
 - - -
+## 0.3.9 - 2024-06-22
+#### Bug Fixes
+- list will only show latest not null values in env - (a987b7b) - Mattia Righetti
+- duplicate will only duplicate latest not null values in env - (a855ea2) - Mattia Righetti
+- delete ops respect soft delete contract - (04a5053) - Mattia Righetti
+- delete_env now respects delete contract - (0fd7d3d) - Mattia Righetti
+#### Documentation
+- more db.rs function docs - (593f782) - Mattia Righetti
+#### Miscellaneous Chores
+- remove useless file - (a19d574) - Mattia Righetti
+
+- - -
+
 ## 0.3.8 - 2024-06-21
 #### Bug Fixes
 - return error if user is trying to list non-existent variable - (d5e2576) - Mattia Righetti
