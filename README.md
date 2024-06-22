@@ -24,6 +24,23 @@ Options:
   -V, --version  Print version
 ```
 
+## Install
+You can download the envelope binary in the latest
+[release](https://github.com/mattrighetti/envelope/releases/latest) and copy the
+binary to a folder in your `$PATH`
+
+## Building
+envelope is written in Rust, so you'll need the Rust compiler.
+
+To build envelope:
+```sh
+$ git clone https://github.com/mattrighetti/envelope
+$ cd envelope
+$ cargo build --release
+$ ./target/release/envelope --version
+envelope 0.3.10
+```
+
 ## How it works
 `envelope` is a command line utility that leverages an SQLite database
 to keep track of your enviroment variables so that you can easily switch between
