@@ -30,7 +30,8 @@ You can download the envelope binary in the latest
 binary to a folder in your `$PATH`
 
 ## Building
-envelope is written in Rust, so you'll need the Rust compiler.
+envelope is written in Rust, so you'll need the [Rust
+compiler](https://www.rust-lang.org/).
 
 To build envelope:
 ```sh
