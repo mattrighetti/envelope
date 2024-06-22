@@ -44,7 +44,7 @@ envelope 0.3.10
 
 ## How it works
 `envelope` is a command line utility that leverages an SQLite database
-to keep track of your enviroment variables so that you can easily switch between
+to keep track of your environment variables so you can easily switch between
 different configurations.
 
 ## Usage
