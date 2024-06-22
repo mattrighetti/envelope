@@ -162,11 +162,23 @@ impl EnvelopeDb {
         Ok(())
     }
 
+    /// soft deletes all variables with key `key`
     pub async fn delete_var_all(&self, key: &str) -> io::Result<()> {
-        let (sql, values) = Query::update()
-            .table(Environments::Table)
-            .values([(Environments::Value, Keyword::Null.into())])
+        let select = Query::select()
+            .from(Environments::Table)
+            .column(Environments::Env)
+            .column(Environments::Key)
+            .expr(Expr::val(Option::<i32>::None))
             .and_where(Expr::col(Environments::Key).eq(key))
+            .and_where(Expr::col(Environments::Value).is_not_null())
+            .group_by_columns([Environments::Env, Environments::Key])
+            .to_owned();
+
+        let (sql, values) = Query::insert()
+            .into_table(Environments::Table)
+            .columns([Environments::Env, Environments::Key, Environments::Value])
+            .select_from(select)
+            .unwrap()
             .build_sqlx(SqliteQueryBuilder);
 
         sqlx::query_with(&sql, values)
@@ -178,11 +190,22 @@ impl EnvelopeDb {
     }
 
     pub async fn delete_var_for_env(&self, env: &str, key: &str) -> io::Result<()> {
-        let (sql, values) = Query::update()
-            .table(Environments::Table)
-            .values([(Environments::Value, Keyword::Null.into())])
-            .and_where(Expr::col(Environments::Key).eq(key))
+        let select = Query::select()
+            .from(Environments::Table)
+            .column(Environments::Env)
+            .column(Environments::Key)
+            .expr(Expr::val(Option::<i32>::None))
             .and_where(Expr::col(Environments::Env).eq(env))
+            .and_where(Expr::col(Environments::Key).eq(key))
+            .and_where(Expr::col(Environments::Value).is_not_null())
+            .group_by_columns([Environments::Env, Environments::Key])
+            .to_owned();
+
+        let (sql, values) = Query::insert()
+            .into_table(Environments::Table)
+            .columns([Environments::Env, Environments::Key, Environments::Value])
+            .select_from(select)
+            .unwrap()
             .build_sqlx(SqliteQueryBuilder);
 
         sqlx::query_with(&sql, values)
