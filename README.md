@@ -121,7 +121,8 @@ $ envelope delete dev
 $ envelope list dev
 ```
 Envelope always soft deletes environment variables, they are never actually
-deleted. You can however do a hard delete using the `drop` command
+deleted, this is useful in case you want to take a look at the history of a
+certain valriable. You can however do a hard delete using the `drop` command
 
 ### Drop
 Drops (hard deletes) an environment
