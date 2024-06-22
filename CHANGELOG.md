@@ -2,6 +2,15 @@
 All notable changes to this project will be documented in this file. See [conventional commits](https://www.conventionalcommits.org/) for commit guidelines.
 
 - - -
+## 0.3.10 - 2024-06-22
+#### Bug Fixes
+- add edit command description - (51e704d) - Mattia Righetti
+#### Miscellaneous Chores
+- update readme - (cc44a2b) - Mattia Righetti
+- update readme - (5f18c40) - Mattia Righetti
+
+- - -
+
 ## 0.3.9 - 2024-06-22
 #### Bug Fixes
 - list will only show latest not null values in env - (a987b7b) - Mattia Righetti
