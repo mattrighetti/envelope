@@ -32,7 +32,7 @@ jobs:
 
   build-release:
     name: build-release
-    needs: ['create-release']
+    needs: ["create-release"]
     runs-on: ${{ matrix.os }}
     env:
       CARGO: cargo
@@ -42,16 +42,27 @@ jobs:
 
     strategy:
       matrix:
-        build: [linux, linux-arm, macos]
         include:
           - build: linux
             os: ubuntu-latest
             rust: nightly
             target: x86_64-unknown-linux-musl
-          - build: linux-arm
+          - build: stable-x86
             os: ubuntu-latest
-            rust: nightly
-            target: arm-unknown-linux-gnueabihf
+            rust: stable
+            target: i686-unknown-linux-gnu
+          - build: stable-aarch64
+            os: ubuntu-latest
+            rust: stable
+            target: aarch64-unknown-linux-gnu
+          - build: stable-arm-gnueabihf
+            os: ubuntu-latest
+            rust: stable
+            target: armv7-unknown-linux-gnueabihf
+          - build: stable-arm-musleabihf
+            os: ubuntu-latest
+            rust: stable
+            target: armv7-unknown-linux-musleabihf
           - build: macos
             os: macos-latest
             rust: nightly
