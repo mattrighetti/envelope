@@ -2,6 +2,16 @@
 All notable changes to this project will be documented in this file. See [conventional commits](https://www.conventionalcommits.org/) for commit guidelines.
 
 - - -
+## 0.3.11 - 2024-06-23
+#### Continuous Integration
+- add new builds for aarch and arm musleabihf - (7ef2850) - Mattia Righetti
+#### Miscellaneous Chores
+- update readme - (df19a46) - Mattia Righetti
+- update readme with installation and build - (42e717e) - Mattia Righetti
+- remove install section in readme temp - (d25a79f) - Mattia Righetti
+
+- - -
+
 ## 0.3.10 - 2024-06-22
 #### Bug Fixes
 - add edit command description - (51e704d) - Mattia Righetti
