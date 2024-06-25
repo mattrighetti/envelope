@@ -24,10 +24,23 @@ Options:
   -V, --version  Print version
 ```
 
-## Install
+## Installation
+
+### Binary
 You can download the envelope binary in the latest
 [release](https://github.com/mattrighetti/envelope/releases/latest) and copy the
 binary to a folder in your `$PATH`
+
+### Cargo
+You can install envelope with cargo, make sure that your `~/.cargo` folder is in
+your `$PATH`
+```sh
+$ git clone https://github.com/mattrighetti/envelope
+$ cd envelope
+$ cargo install --path .
+$ envelope --version
+envelope 0.3.11
+```
 
 ## Building
 envelope is written in Rust, so you'll need the [Rust
@@ -39,7 +52,7 @@ $ git clone https://github.com/mattrighetti/envelope
 $ cd envelope
 $ cargo build --release
 $ ./target/release/envelope --version
-envelope 0.3.10
+envelope 0.3.11
 ```
 
 ## How it works
