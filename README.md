@@ -26,6 +26,12 @@ Options:
 
 ## Installation
 
+### Brew
+You can install envelope from homebrew-core:
+```sh
+$ brew install envelope
+```
+
 ### Binary
 You can download the envelope binary in the latest
 [release](https://github.com/mattrighetti/envelope/releases/latest) and copy the
