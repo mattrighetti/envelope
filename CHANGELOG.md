@@ -2,6 +2,18 @@
 All notable changes to this project will be documented in this file. See [conventional commits](https://www.conventionalcommits.org/) for commit guidelines.
 
 - - -
+## 0.3.12 - 2025-02-08
+#### Bug Fixes
+- misc fixes and refactoring - (d5ac1ad) - Mattia Righetti
+#### Miscellaneous Chores
+- **(license)** update unlicense file and license field info - (147e59a) - Rui Chen
+- bump ci to rust 1.84 - (51ad45a) - Mattia Righetti
+- update readme - (c86e3f8) - Mattia Righetti
+- add unlicense and mit license - (775b222) - Mattia Righetti
+- update readme - (87319f5) - Mattia Righetti
+
+- - -
+
 ## 0.3.11 - 2024-06-23
 #### Continuous Integration
 - add new builds for aarch and arm musleabihf - (7ef2850) - Mattia Righetti
