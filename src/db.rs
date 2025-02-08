@@ -66,6 +66,12 @@ pub struct EnvelopeDb {
     db: SqlitePool,
 }
 
+/// enum specifying truncation logic used in listing functions
+pub enum Truncate {
+    None,
+    Max(u32),
+}
+
 #[cfg(test)]
 impl EnvelopeDb {
     pub(crate) fn with(pool: SqlitePool) -> Self {
@@ -78,12 +84,14 @@ impl EnvelopeDb {
 }
 
 impl EnvelopeDb {
+    /// initializes envelope database
     pub async fn init() -> EnvelopeResult<Self> {
         let db = init().await?;
 
         Ok(EnvelopeDb { db })
     }
 
+    /// loads envelope database from current dir
     pub async fn load(init: bool) -> EnvelopeResult<Self> {
         if !is_present() && !init {
             return Err("envelope is not initialized in current directory".into());
@@ -93,7 +101,7 @@ impl EnvelopeDb {
     }
 
     /// checks if an environment exists in the database
-    pub async fn check_env_exists(&self, env: &str) -> io::Result<bool> {
+    pub async fn env_exists(&self, env: &str) -> io::Result<bool> {
         sqlx::query_scalar(r"SELECT EXISTS(SELECT 1 FROM environments WHERE env = $1)")
             .bind(env)
             .fetch_one(&self.db)
@@ -102,7 +110,7 @@ impl EnvelopeDb {
     }
 
     /// Returns all active variables stored for all environments
-    pub async fn get_all_env_vars(&self) -> io::Result<Vec<EnvironmentRow>> {
+    pub async fn get_active_kv_in_env(&self) -> io::Result<Vec<EnvironmentRow>> {
         sqlx::query_as(
             r"SELECT *
             FROM active_envs",
@@ -126,7 +134,7 @@ impl EnvelopeDb {
     }
 
     /// soft deletes all variables in an environment
-    pub async fn delete_env(&self, env: &str) -> io::Result<()> {
+    pub async fn soft_delete_env(&self, env: &str) -> io::Result<()> {
         sqlx::query(
             r"INSERT INTO environments (env, key, value)
             SELECT env, key, NULL
@@ -142,7 +150,7 @@ impl EnvelopeDb {
     }
 
     /// soft deletes all variables with specified key
-    pub async fn delete_var_all(&self, key: &str) -> io::Result<()> {
+    pub async fn soft_delete_keys(&self, key: &str) -> io::Result<()> {
         sqlx::query(
             r"INSERT INTO environments (env, key, value)
             SELECT env, key, NULL
@@ -158,7 +166,7 @@ impl EnvelopeDb {
     }
 
     /// Soft deletes specified variable in passed environment
-    pub async fn delete_var_for_env(&self, env: &str, key: &str) -> io::Result<()> {
+    pub async fn soft_delete_key_in_env(&self, env: &str, key: &str) -> io::Result<()> {
         sqlx::query(
             r"INSERT INTO environments (env, key, value)
             SELECT env, key, NULL
@@ -177,7 +185,7 @@ impl EnvelopeDb {
     }
 
     /// deletes environment from database entirely
-    pub async fn drop_env(&self, env: &str) -> io::Result<()> {
+    pub async fn delete_env(&self, env: &str) -> io::Result<()> {
         sqlx::query(
             r"DELETE
             FROM environments
@@ -193,12 +201,12 @@ impl EnvelopeDb {
 
     /// duplicates `src_env` in a new environment `tgt_env`.
     /// In order for this to work, `tgt_env` must not be present.
-    pub async fn duplicate(&self, source_env: &str, target_env: &str) -> io::Result<()> {
-        if !self.check_env_exists(source_env).await? {
+    pub async fn duplicate_env(&self, source_env: &str, target_env: &str) -> io::Result<()> {
+        if !self.env_exists(source_env).await? {
             return Err(io::Error::other("source environment does not exist"));
         }
 
-        if self.check_env_exists(target_env).await? {
+        if self.env_exists(target_env).await? {
             return Err(io::Error::other(
                 "duplicating into an already present target environment is not allowed",
             ));
@@ -220,7 +228,7 @@ impl EnvelopeDb {
     }
 
     /// lists all active variables in an environment
-    pub async fn list_var_in_env(&self, env: &str) -> io::Result<Vec<EnvironmentRow>> {
+    pub async fn list_kv_in_env(&self, env: &str) -> io::Result<Vec<EnvironmentRow>> {
         sqlx::query_as(
             r"SELECT *
             FROM active_envs
@@ -233,7 +241,9 @@ impl EnvelopeDb {
         .map_err(|e| std_err!("db error: {}", e))
     }
 
-    pub async fn list_all_var_in_env(
+    /// list all key-value for specified environment, this also takes an option
+    /// to truncate the max length of values returned
+    pub async fn list_kv_in_env_alt(
         &self,
         env: &str,
         truncate: Truncate,
@@ -283,11 +293,6 @@ impl EnvelopeDb {
     }
 }
 
-pub enum Truncate {
-    None,
-    Max(u32),
-}
-
 #[cfg(test)]
 pub async fn test_db() -> EnvelopeDb {
     let pool = sqlx::sqlite::SqlitePoolOptions::new()
@@ -307,20 +312,20 @@ mod tests {
     use super::*;
 
     #[tokio::test]
-    async fn test_check_env_exists() {
+    async fn test_env_exists() {
         let db = test_db().await;
         // Insert a test environment
         db.insert("test_env", "test_key", "test_value")
             .await
             .unwrap();
         // Check if the environment exists
-        assert!(db.check_env_exists("test_env").await.unwrap());
+        assert!(db.env_exists("test_env").await.unwrap());
         // Check for a non-existent environment
-        assert!(!db.check_env_exists("non_existent_env").await.unwrap());
+        assert!(!db.env_exists("non_existent_env").await.unwrap());
     }
 
     #[tokio::test]
-    async fn test_get_all_env_vars() {
+    async fn test_get_kv_in_env() {
         let db = test_db().await;
 
         // Insert test data
@@ -329,7 +334,7 @@ mod tests {
         db.insert("env2", "key1", "value3").await.unwrap();
 
         // Fetch all environment variables
-        let vars = db.get_all_env_vars().await.unwrap();
+        let vars = db.get_active_kv_in_env().await.unwrap();
         assert_eq!(vars.len(), 3);
         // keys are always uppercased
         let expected: HashSet<_> = [
@@ -359,7 +364,7 @@ mod tests {
             .unwrap();
 
         // Fetch all environment variables
-        let vars = db.get_all_env_vars().await.unwrap();
+        let vars = db.get_active_kv_in_env().await.unwrap();
 
         let expected: HashSet<_> = [("test_env", "TEST_KEY", "test_value")]
             .into_iter()
@@ -375,7 +380,7 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn test_delete_env() {
+    async fn test_soft_delete_env() {
         let db = test_db().await;
 
         // Insert test data
@@ -384,7 +389,7 @@ mod tests {
         db.insert("env2", "key2", "value3").await.unwrap();
 
         // Delete environment
-        db.delete_env("env1").await.unwrap();
+        db.soft_delete_env("env1").await.unwrap();
 
         // Query database directly to verify stored values
         let rows = sqlx::query(
@@ -422,7 +427,7 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn test_drop_env() {
+    async fn test_delete_env() {
         let db = test_db().await;
 
         // Insert test data
@@ -432,7 +437,7 @@ mod tests {
         db.insert("env3", "key2", "value3").await.unwrap();
 
         // Delete environment
-        db.drop_env("env2").await.unwrap();
+        db.delete_env("env2").await.unwrap();
 
         // Query database directly to verify stored values
         let rows = sqlx::query(
@@ -479,8 +484,8 @@ mod tests {
         db.insert("env2", "key2", "value3").await.unwrap();
         db.insert("env3", "key2", "value3").await.unwrap();
 
-        db.delete_var_for_env("env1", "key1").await.unwrap();
-        db.delete_var_for_env("env2", "key2").await.unwrap();
+        db.soft_delete_key_in_env("env1", "key1").await.unwrap();
+        db.soft_delete_key_in_env("env2", "key2").await.unwrap();
 
         // Query database directly to verify stored values
         let rows = sqlx::query(
@@ -528,7 +533,7 @@ mod tests {
         db.insert("env2", "key2", "value3").await.unwrap();
         db.insert("env3", "key2", "value3").await.unwrap();
 
-        db.delete_var_all("key2").await.unwrap();
+        db.soft_delete_keys("key2").await.unwrap();
 
         // Query database directly to verify stored values
         let rows = sqlx::query(
@@ -577,13 +582,13 @@ mod tests {
         db.insert("env3", "key2", "value3").await.unwrap();
 
         // Duplicate env1 -> env4
-        db.duplicate("env1", "env4").await.unwrap();
+        db.duplicate_env("env1", "env4").await.unwrap();
         assert!(
-            db.duplicate("env4", "env1").await.is_err(),
+            db.duplicate_env("env4", "env1").await.is_err(),
             "cannot duplicate in already present env1"
         );
         assert!(
-            db.duplicate("env5", "env1").await.is_err(),
+            db.duplicate_env("env5", "env1").await.is_err(),
             "cannot duplicate from non-existent env5"
         );
 
@@ -651,11 +656,11 @@ mod tests {
                 EnvironmentRow::from("env1", "KEY3", "value3"),
                 EnvironmentRow::from("env1", "KEY2", "value2"),
             ],
-            db.list_var_in_env("env1").await.unwrap()
+            db.list_kv_in_env("env1").await.unwrap()
         );
         assert_eq!(
             vec![EnvironmentRow::from("env2", "KEY1", "value1"),],
-            db.list_var_in_env("env2").await.unwrap()
+            db.list_kv_in_env("env2").await.unwrap()
         );
     }
 
@@ -685,9 +690,7 @@ mod tests {
                 EnvironmentRow::from("env1", "KEY3", "value3"),
                 EnvironmentRow::from("env1", "KEY2", "value2"),
             ],
-            db.list_all_var_in_env("env1", Truncate::None)
-                .await
-                .unwrap()
+            db.list_kv_in_env_alt("env1", Truncate::None).await.unwrap()
         );
         assert_eq!(
             vec![
@@ -695,7 +698,7 @@ mod tests {
                 EnvironmentRow::from("env1", "KEY3", "val"),
                 EnvironmentRow::from("env1", "KEY2", "val"),
             ],
-            db.list_all_var_in_env("env1", Truncate::Max(3))
+            db.list_kv_in_env_alt("env1", Truncate::Max(3))
                 .await
                 .unwrap()
         );
@@ -705,7 +708,7 @@ mod tests {
                 EnvironmentRow::from("env1", "KEY3", "value3"),
                 EnvironmentRow::from("env1", "KEY2", "value2"),
             ],
-            db.list_all_var_in_env("env1", Truncate::Max(7))
+            db.list_kv_in_env_alt("env1", Truncate::Max(7))
                 .await
                 .unwrap()
         );
@@ -715,7 +718,7 @@ mod tests {
                 EnvironmentRow::from("env1", "KEY3", ""),
                 EnvironmentRow::from("env1", "KEY2", ""),
             ],
-            db.list_all_var_in_env("env1", Truncate::Max(0))
+            db.list_kv_in_env_alt("env1", Truncate::Max(0))
                 .await
                 .unwrap()
         );

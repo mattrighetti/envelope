@@ -9,7 +9,7 @@ pub async fn export_dotenv(
     env: &str,
     buf: &mut io::BufWriter<fs::File>,
 ) -> Result<()> {
-    for env in db.list_var_in_env(env).await? {
+    for env in db.list_kv_in_env(env).await? {
         writeln!(buf, "{}={}", &env.key, &env.value)?;
     }
 

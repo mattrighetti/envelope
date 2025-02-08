@@ -3,7 +3,7 @@ use std::io::Result;
 use crate::db::EnvelopeDb;
 
 pub async fn drop(db: &EnvelopeDb, env: &str) -> Result<()> {
-    db.drop_env(env).await
+    db.delete_env(env).await
 }
 
 #[cfg(test)]
