@@ -1,7 +1,7 @@
 # envelope
 envelope is a modern environment variables manager.
 
-```
+```console
 A modern environment variables manager
 
 Usage: envelope [COMMAND]
@@ -28,7 +28,7 @@ Options:
 
 ### Brew
 You can install envelope from homebrew-core:
-```sh
+```console
 $ brew install envelope
 ```
 
@@ -40,7 +40,7 @@ binary to a folder in your `$PATH`
 ### Cargo
 You can install envelope with cargo, make sure that your `~/.cargo` folder is in
 your `$PATH`
-```sh
+```console
 $ git clone https://github.com/mattrighetti/envelope
 $ cd envelope
 $ cargo install --path .
@@ -53,7 +53,7 @@ envelope is written in Rust, so you'll need the [Rust
 compiler](https://www.rust-lang.org/).
 
 To build envelope:
-```sh
+```console
 $ git clone https://github.com/mattrighetti/envelope
 $ cd envelope
 $ cargo build --release
@@ -70,7 +70,7 @@ different configurations.
 
 ### Pretty print
 Pipe .env files to envelope to get a pretty format representation of the file
-```
+```console
 $ cat .env | envelope
 
 +-------------------+----------------------------------------------+
@@ -93,7 +93,7 @@ $ cat .env | envelope
 ### Import
 Import from .env file
 
-```
+```console
 $ envelope import dev .env
 $ envelope list dev
 API_KEY=your_api_key_here
@@ -105,13 +105,13 @@ SMTP_HOST=smtp.example.com
 ```
 
 It's also possible to import directly from stdin
-```
+```console
 $ cat .env | envelope import prod
 ```
 
 ### List
 List env variables of a particular enviroment
-```
+```console
 $ envelope list dev
 API_KEY=your_api_key
 ...
@@ -120,7 +120,7 @@ SMTP_HOST=smtp.example.com
 
 ### Export
 Export environment variables to a .env file in current directory
-```
+```console
 $ envelope export prod
 ```
 This will create a .env file containing all the variables that you have stored
@@ -131,13 +131,13 @@ prod envs? Just run `envelope export prod`, want to switch to your dev ones? Run
 `envelope export dev` and everything will be handled for you, for free.
 
 You can also output to a specific file with the `-o` flag:
-```
+```console
 $ envelope export prod -o .env.prod
 ```
 
 ### Add
 Add env variables to an environment
-```
+```console
 $ envelope add local db_connection https://example.com
 $ envelope list local
 DB_CONNECTION=https://examples.com
@@ -146,7 +146,7 @@ You can use lowercased variables, they will be uppercased by envelope
 
 ### Delete
 Delete entire environments from envelope
-```
+```console
 $ envelope delete dev
 $ envelope list dev
 ```
@@ -156,14 +156,14 @@ certain valriable. You can however do a hard delete using the `drop` command
 
 ### Drop
 Drops (hard deletes) an environment
-```sh
+```console
 $ envelope drop dev
 $ envelope list
 ```
 
 ### Check
 Checks which environment is currently active
-```sh
+```console
 $ export $(envelope list dev)
 $ envelope check
 dev
@@ -186,7 +186,7 @@ $ envelope diff local prod
 
 ### Revert
 Revert a key value of an environment to a previous value
-```diff
+```console
 $ envelope add local db_connection http://localhost:3030
 $ envelope add local db_connection http://localhost:2222
 $ envelope add local db_connection http://localhost:3333
@@ -198,4 +198,16 @@ DB_CONNECTION=http://localhost:2222
 $ envelope revert local db_connection
 $ envelope list local
 DB_CONNECTION=http://localhost:3030
+```
+
+### History
+Shows all the values that a certain key in an environment was set to
+```console
+$ envelope add local db_connection http://localhost:3030
+$ envelope add local db_connection http://localhost:2222
+$ envelope add local db_connection http://localhost:3333
+$ envelope history local db_connection
+DB_CONNECTION=http://localhost:3030
+DB_CONNECTION=http://localhost:2222
+DB_CONNECTION=http://localhost:3333
 ```
