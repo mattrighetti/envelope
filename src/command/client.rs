@@ -13,6 +13,7 @@ mod edit;
 mod export;
 mod import;
 mod list;
+mod revert;
 
 #[derive(Subcommand)]
 #[command(infer_subcommands = true)]
@@ -40,6 +41,8 @@ pub enum EnvelopeCmd {
     Import(import::Cmd),
 
     List(list::Cmd),
+
+    Revert(revert::Cmd),
 }
 
 impl EnvelopeCmd {
@@ -59,6 +62,7 @@ impl EnvelopeCmd {
             Self::Edit(edit) => edit.run(&db).await?,
             Self::Import(import) => import.run(&db).await?,
             Self::List(list) => list.run(&db).await?,
+            Self::Revert(revert) => revert.run(&db).await?,
             _ => {}
         }
 

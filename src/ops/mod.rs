@@ -7,7 +7,9 @@ mod duplicate;
 mod edit;
 mod export;
 mod list;
+mod revert;
 
+pub use revert::*;
 pub use diff::*;
 pub use add::*;
 pub use check::*;
