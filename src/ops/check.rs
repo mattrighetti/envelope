@@ -13,7 +13,7 @@ pub async fn check<W: Write>(w: &mut W, db: &EnvelopeDb) -> Result<()> {
 }
 
 async fn check_active_envs(db: &EnvelopeDb) -> Result<HashSet<String>> {
-    let rows = db.get_all_env_vars().await?;
+    let rows = db.get_active_kv_in_env().await?;
     // dumb implementation
     // TODO optimise this search
     let mut active = HashSet::new();

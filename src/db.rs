@@ -1,32 +1,38 @@
-use sea_query::{Alias, Asterisk, Expr, Func, Order, Query, SqliteQueryBuilder};
-use sea_query_binder::SqlxBinder;
 use sqlx::SqlitePool;
 use std::{env, io};
 
-use crate::std_err;
+use crate::{std_err, err};
 
 pub(crate) type EnvelopeResult<T> = Result<T, Box<dyn std::error::Error>>;
 
-#[derive(Debug, sea_query::Iden)]
-pub enum Environments {
-    Table,
-    Env,
-    Key,
-    Value,
-    CreatedAt,
-}
-
-#[derive(Debug, Clone, sqlx::FromRow)]
+#[derive(Debug, Clone, PartialEq, Eq, sqlx::FromRow)]
 pub struct Environment {
     pub env: String,
 }
 
-#[derive(Debug, Clone, sqlx::FromRow)]
+#[cfg(test)]
+impl Environment {
+    fn from(e: &str) -> Self {
+        Self { env: e.to_owned() }
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, sqlx::FromRow)]
 pub struct EnvironmentRow {
     pub env: String,
     pub key: String,
     pub value: String,
-    pub created_at: i32,
+}
+
+#[cfg(test)]
+impl EnvironmentRow {
+    fn from(e: &str, k: &str, v: &str) -> Self {
+        Self {
+            env: e.to_owned(),
+            key: k.to_owned(),
+            value: v.to_owned(),
+        }
+    }
 }
 
 pub fn is_present() -> bool {
@@ -60,6 +66,12 @@ pub struct EnvelopeDb {
     db: SqlitePool,
 }
 
+/// enum specifying truncation logic used in listing functions
+pub enum Truncate {
+    None,
+    Max(u32),
+}
+
 #[cfg(test)]
 impl EnvelopeDb {
     pub(crate) fn with(pool: SqlitePool) -> Self {
@@ -72,12 +84,14 @@ impl EnvelopeDb {
 }
 
 impl EnvelopeDb {
+    /// initializes envelope database
     pub async fn init() -> EnvelopeResult<Self> {
         let db = init().await?;
 
         Ok(EnvelopeDb { db })
     }
 
+    /// loads envelope database from current dir
     pub async fn load(init: bool) -> EnvelopeResult<Self> {
         if !is_present() && !init {
             return Err("envelope is not initialized in current directory".into());
@@ -87,46 +101,31 @@ impl EnvelopeDb {
     }
 
     /// checks if an environment exists in the database
-    pub async fn check_env_exists(&self, env: &str) -> io::Result<()> {
-        let (sql, value) = Query::select()
-            .from(Environments::Table)
-            .column(Environments::Env)
-            .distinct()
-            .and_where(Expr::col(Environments::Env).eq(env))
-            .build_sqlx(SqliteQueryBuilder);
-
-        sqlx::query_as_with(&sql, value)
+    pub async fn env_exists(&self, env: &str) -> io::Result<bool> {
+        sqlx::query_scalar(r"SELECT EXISTS(SELECT 1 FROM environments WHERE env = $1)")
+            .bind(env)
             .fetch_one(&self.db)
             .await
             .map_err(|e| std_err!("db error: {}", e))
     }
 
-    pub async fn get_all_env_vars(&self) -> io::Result<Vec<EnvironmentRow>> {
-        let (sql, _) = Query::select()
-            .from(Environments::Table)
-            .column(Asterisk)
-            .group_by_columns([Environments::Env, Environments::Key])
-            .and_having(Expr::col(Environments::CreatedAt).max())
-            .build_sqlx(SqliteQueryBuilder);
-
-        let rows = sqlx::query_as::<_, EnvironmentRow>(&sql)
-            .fetch_all(&self.db)
-            .await
-            .map_err(|e| std_err!("db error: {}", e))?;
-
-        Ok(rows)
+    /// Returns all active variables stored for all environments
+    pub async fn get_active_kv_in_env(&self) -> io::Result<Vec<EnvironmentRow>> {
+        sqlx::query_as(
+            r"SELECT *
+            FROM active_envs",
+        )
+        .fetch_all(&self.db)
+        .await
+        .map_err(|e| std_err!("db error: {}", e))
     }
 
     /// inserts `key` and `value` to environment `env`
     pub async fn insert(&self, env: &str, key: &str, var: &str) -> io::Result<()> {
-        let (sql, values) = Query::insert()
-            .into_table(Environments::Table)
-            .columns([Environments::Env, Environments::Key, Environments::Value])
-            .values([env.into(), Func::upper(key).into(), var.into()])
-            .unwrap()
-            .build_sqlx(SqliteQueryBuilder);
-
-        sqlx::query_with(&sql, values)
+        sqlx::query(r"INSERT INTO environments (env, key, value) VALUES ($1, upper($2), $3)")
+            .bind(env)
+            .bind(key)
+            .bind(var)
             .execute(&self.db)
             .await
             .map_err(|e| std_err!("db error: {}", e))?;
@@ -134,232 +133,165 @@ impl EnvelopeDb {
         Ok(())
     }
 
-    /// soft deletes all variables in an environment by setting all their
-    /// values to NULL
-    pub async fn delete_env(&self, env: &str) -> io::Result<()> {
-        let select = Query::select()
-            .from(Environments::Table)
-            .column(Environments::Env)
-            .column(Environments::Key)
-            .expr(Expr::val(Option::<i32>::None))
-            .and_where(Expr::col(Environments::Env).eq(env))
-            .and_where(Expr::col(Environments::Value).is_not_null())
-            .group_by_columns([Environments::Env, Environments::Key])
-            .to_owned();
-
-        let (sql, values) = Query::insert()
-            .into_table(Environments::Table)
-            .columns([Environments::Env, Environments::Key, Environments::Value])
-            .select_from(select)
-            .unwrap()
-            .build_sqlx(SqliteQueryBuilder);
-
-        sqlx::query_with(&sql, values)
-            .execute(&self.db)
-            .await
-            .map_err(|e| std_err!("db error: {}", e))?;
+    /// soft deletes all variables in an environment
+    pub async fn soft_delete_env(&self, env: &str) -> io::Result<()> {
+        sqlx::query(
+            r"INSERT INTO environments (env, key, value)
+            SELECT env, key, NULL
+            FROM active_envs
+            WHERE env = $1",
+        )
+        .bind(env)
+        .execute(&self.db)
+        .await
+        .map_err(|e| std_err!("db error: {}", e))?;
 
         Ok(())
     }
 
-    /// soft deletes all variables with key `key`
-    pub async fn delete_var_all(&self, key: &str) -> io::Result<()> {
-        let select = Query::select()
-            .from(Environments::Table)
-            .column(Environments::Env)
-            .column(Environments::Key)
-            .expr(Expr::val(Option::<i32>::None))
-            .and_where(Expr::col(Environments::Key).eq(key))
-            .and_where(Expr::col(Environments::Value).is_not_null())
-            .group_by_columns([Environments::Env, Environments::Key])
-            .to_owned();
-
-        let (sql, values) = Query::insert()
-            .into_table(Environments::Table)
-            .columns([Environments::Env, Environments::Key, Environments::Value])
-            .select_from(select)
-            .unwrap()
-            .build_sqlx(SqliteQueryBuilder);
-
-        sqlx::query_with(&sql, values)
-            .execute(&self.db)
-            .await
-            .map_err(|e| std_err!("db error: {}", e))?;
+    /// soft deletes all variables with specified key
+    pub async fn soft_delete_keys(&self, key: &str) -> io::Result<()> {
+        sqlx::query(
+            r"INSERT INTO environments (env, key, value)
+            SELECT env, key, NULL
+            FROM active_envs
+            WHERE key = UPPER($1)",
+        )
+        .bind(key)
+        .execute(&self.db)
+        .await
+        .map_err(|e| std_err!("db error: {}", e))?;
 
         Ok(())
     }
 
-    pub async fn delete_var_for_env(&self, env: &str, key: &str) -> io::Result<()> {
-        let select = Query::select()
-            .from(Environments::Table)
-            .column(Environments::Env)
-            .column(Environments::Key)
-            .expr(Expr::val(Option::<i32>::None))
-            .and_where(Expr::col(Environments::Env).eq(env))
-            .and_where(Expr::col(Environments::Key).eq(key))
-            .and_where(Expr::col(Environments::Value).is_not_null())
-            .group_by_columns([Environments::Env, Environments::Key])
-            .to_owned();
-
-        let (sql, values) = Query::insert()
-            .into_table(Environments::Table)
-            .columns([Environments::Env, Environments::Key, Environments::Value])
-            .select_from(select)
-            .unwrap()
-            .build_sqlx(SqliteQueryBuilder);
-
-        sqlx::query_with(&sql, values)
-            .execute(&self.db)
-            .await
-            .map_err(|e| std_err!("db error: {}", e))?;
+    /// Soft deletes specified variable in passed environment
+    pub async fn soft_delete_key_in_env(&self, env: &str, key: &str) -> io::Result<()> {
+        sqlx::query(
+            r"INSERT INTO environments (env, key, value)
+            SELECT env, key, NULL
+            FROM active_envs
+            WHERE
+                env = $1 AND
+                key = UPPER($2)",
+        )
+        .bind(env)
+        .bind(key)
+        .execute(&self.db)
+        .await
+        .map_err(|e| std_err!("db error: {}", e))?;
 
         Ok(())
     }
 
     /// deletes environment from database entirely
-    pub async fn drop_env(&self, env: &str) -> io::Result<()> {
-        let (sql, values) = Query::delete()
-            .from_table(Environments::Table)
-            .and_where(Expr::col(Environments::Env).eq(env))
-            .build_sqlx(SqliteQueryBuilder);
-
-        sqlx::query_with(&sql, values)
-            .execute(&self.db)
-            .await
-            .map_err(|e| std_err!("db error: {}", e))?;
-
-        Ok(())
-    }
-
-    /// duplicates `src_env` in a new environment `tgt_env`
-    pub async fn duplicate(&self, src_env: &str, tgt_env: &str) -> io::Result<()> {
-        let select = Query::select()
-            .column(Asterisk)
-            .from(Environments::Table)
-            .and_where(Expr::col(Environments::Env).eq(src_env))
-            .group_by_columns([Environments::Env, Environments::Key])
-            .and_having(Expr::col(Environments::CreatedAt).max())
-            .to_owned();
-
-        let select = Query::select()
-            .from_subquery(select, Alias::new("T"))
-            .expr(Expr::val(tgt_env))
-            .column(Environments::Key)
-            .column(Environments::Value)
-            .and_where(Expr::col(Environments::Env).eq(src_env))
-            .and_where(Expr::col(Environments::Value).is_not_null())
-            .group_by_columns([Environments::Env, Environments::Key])
-            .and_having(Expr::col(Environments::CreatedAt).max())
-            .order_by_columns([
-                (Environments::Env, Order::Desc),
-                (Environments::Key, Order::Desc),
-            ])
-            .to_owned();
-
-        let (sql, values) = Query::insert()
-            .into_table(Environments::Table)
-            .columns([Environments::Env, Environments::Key, Environments::Value])
-            .select_from(select)
-            .unwrap()
-            .build_sqlx(SqliteQueryBuilder);
-
-        sqlx::query_with(&sql, values)
-            .execute(&self.db)
-            .await
-            .map_err(|e| std_err!("db error: {}", e))?;
+    pub async fn delete_env(&self, env: &str) -> io::Result<()> {
+        sqlx::query(
+            r"DELETE
+            FROM environments
+            WHERE env = $1",
+        )
+        .bind(env)
+        .execute(&self.db)
+        .await
+        .map_err(|e| std_err!("db error: {}", e))?;
 
         Ok(())
     }
 
-    pub async fn list_var_in_env(&self, env: &str) -> io::Result<Vec<EnvironmentRow>> {
-        let select = Query::select()
-            .column(Asterisk)
-            .from(Environments::Table)
-            .and_where(Expr::col(Environments::Env).eq(env))
-            .group_by_columns([Environments::Env, Environments::Key])
-            .and_having(Expr::col(Environments::CreatedAt).max())
-            .to_owned();
+    /// duplicates `source_env` in a new environment `target_env`.
+    /// In order for this to work, `tgt_env` must not be present.
+    pub async fn duplicate_env(&self, source_env: &str, target_env: &str) -> io::Result<()> {
+        if !self.env_exists(source_env).await? {
+            return err!("source environment {} does not exist", source_env);
+        }
 
-        let (sql, values) = Query::select()
-            .from_subquery(select, Alias::new("T"))
-            .column(Asterisk)
-            .and_where(Expr::col(Environments::Value).is_not_null())
-            .order_by_columns([
-                (Environments::Env, Order::Desc),
-                (Environments::Key, Order::Desc),
-            ])
-            .build_sqlx(SqliteQueryBuilder);
+        if self.env_exists(target_env).await? {
+            return err!(
+                "duplicating into existing target environment {} is not allowed",
+                target_env
+            );
+        }
 
-        sqlx::query_as_with(&sql, values)
-            .fetch_all(&self.db)
-            .await
-            .map_err(|e| std_err!("db error: {}", e))
+        sqlx::query(
+            r"INSERT INTO environments (env, key, value)
+            SELECT $2, key, value
+            FROM active_envs
+            WHERE env = $1",
+        )
+        .bind(source_env)
+        .bind(target_env)
+        .execute(&self.db)
+        .await
+        .map_err(|e| std_err!("db error: {}", e))?;
+
+        Ok(())
     }
 
-    pub async fn list_all_var_in_env(
+    /// lists all active variables in an environment
+    pub async fn list_kv_in_env(&self, env: &str) -> io::Result<Vec<EnvironmentRow>> {
+        sqlx::query_as(
+            r"SELECT *
+            FROM active_envs
+            WHERE env = $1
+            ORDER BY created_at",
+        )
+        .bind(env)
+        .fetch_all(&self.db)
+        .await
+        .map_err(|e| std_err!("db error: {}", e))
+    }
+
+    /// list all key-value for specified environment, this also takes an option
+    /// to truncate the max length of values returned
+    pub async fn list_kv_in_env_alt(
         &self,
         env: &str,
         truncate: Truncate,
     ) -> io::Result<Vec<EnvironmentRow>> {
-        let select = Query::select()
-            .column(Asterisk)
-            .from(Environments::Table)
-            .and_where(Expr::col(Environments::Env).eq(env))
-            .group_by_columns([Environments::Env, Environments::Key])
-            .and_having(Expr::col(Environments::CreatedAt).max())
-            .to_owned();
-
-        let mut select = Query::select()
-            .from_subquery(select, Alias::new("T"))
-            .columns([
-                Environments::Env,
-                Environments::Key,
-                Environments::CreatedAt,
-            ])
-            .and_where(Expr::col(Environments::Value).is_not_null())
-            .and_where(Expr::col(Environments::Env).eq(env))
-            .group_by_col(Environments::Key)
-            .and_having(Expr::col(Environments::CreatedAt).max())
-            .order_by_columns([
-                (Environments::Env, Order::Desc),
-                (Environments::Key, Order::Desc),
-            ])
-            .to_owned();
-
-        match truncate {
-            Truncate::None => select.column(Environments::Value),
-            Truncate::Range(x, y) => select.expr(
-                Expr::cust(format!("substr(value, {}, {}) as value", x, y))
-                    .cast_as(Alias::new("value")),
-            ),
+        let max = match truncate {
+            Truncate::None => None,
+            Truncate::Max(x) => Some(x),
         };
 
-        let (sql, values) = select.build_sqlx(SqliteQueryBuilder);
-        sqlx::query_as_with(&sql, values)
-            .fetch_all(&self.db)
-            .await
-            .map_err(|e| std_err!("db error: {}", e))
+        sqlx::query_as(
+            r"SELECT
+                env
+                , key
+                , created_at
+                , CASE
+                    WHEN $2 IS NULL THEN value
+                    ELSE substr(value, 0, $2 + 1)
+                END AS value
+            FROM active_envs
+            WHERE env = $1
+            ORDER BY created_at",
+        )
+        .bind(env)
+        .bind(max)
+        .fetch_all(&self.db)
+        .await
+        .map_err(|e| std_err!("db error: {}", e))
     }
 
     // lists environments present in the database. Environments that only contain deletes variables
     // will be listed as well.
     pub async fn list_environments(&self) -> io::Result<Vec<Environment>> {
-        let (sql, _) = Query::select()
-            .from(Environments::Table)
-            .column(Environments::Env)
-            .distinct()
-            .build_sqlx(SqliteQueryBuilder);
-
-        sqlx::query_as(&sql)
+        sqlx::query_as(r"SELECT DISTINCT env FROM environments ORDER BY created_at")
             .fetch_all(&self.db)
             .await
             .map_err(|e| std_err!("db error: {}", e))
     }
-}
 
-pub enum Truncate {
-    None,
-    Range(u32, u32),
+    #[cfg(test)]
+    async fn exec(&self, sql: &str) -> io::Result<()> {
+        sqlx::query(sql)
+            .execute(&self.db)
+            .await
+            .map_err(|e| std_err!("db error: {}", e))?;
+
+        Ok(())
+    }
 }
 
 #[cfg(test)]
@@ -372,4 +304,455 @@ pub async fn test_db() -> EnvelopeDb {
     sqlx::migrate!("./migrations").run(&pool).await.unwrap();
 
     EnvelopeDb::with(pool)
+}
+
+#[cfg(test)]
+mod tests {
+    use std::collections::HashSet;
+    use sqlx::Row;
+    use super::*;
+
+    #[tokio::test]
+    async fn test_env_exists() {
+        let db = test_db().await;
+        // Insert a test environment
+        db.insert("test_env", "test_key", "test_value")
+            .await
+            .unwrap();
+        // Check if the environment exists
+        assert!(db.env_exists("test_env").await.unwrap());
+        // Check for a non-existent environment
+        assert!(!db.env_exists("non_existent_env").await.unwrap());
+    }
+
+    #[tokio::test]
+    async fn test_get_kv_in_env() {
+        let db = test_db().await;
+
+        // Insert test data
+        db.insert("env1", "key1", "value1").await.unwrap();
+        db.insert("env1", "key2", "value2").await.unwrap();
+        db.insert("env2", "key1", "value3").await.unwrap();
+
+        // Fetch all environment variables
+        let vars = db.get_active_kv_in_env().await.unwrap();
+        assert_eq!(vars.len(), 3);
+        // keys are always uppercased
+        let expected: HashSet<_> = [
+            ("env1", "KEY1", "value1"),
+            ("env1", "KEY2", "value2"),
+            ("env2", "KEY1", "value3"),
+        ]
+        .into_iter()
+        .map(|(e, k, v)| (e.to_string(), k.to_string(), v.to_string()))
+        .collect();
+
+        let actual: HashSet<_> = vars
+            .into_iter()
+            .map(|row| (row.env, row.key, row.value))
+            .collect();
+
+        assert_eq!(expected, actual);
+    }
+
+    #[tokio::test]
+    async fn test_insert() {
+        let db = test_db().await;
+
+        // Insert a test environment variable
+        db.insert("test_env", "test_key", "test_value")
+            .await
+            .unwrap();
+
+        // Fetch all environment variables
+        let vars = db.get_active_kv_in_env().await.unwrap();
+
+        let expected: HashSet<_> = [("test_env", "TEST_KEY", "test_value")]
+            .into_iter()
+            .map(|(e, k, v)| (e.to_string(), k.to_string(), v.to_string()))
+            .collect();
+
+        let actual: HashSet<_> = vars
+            .into_iter()
+            .map(|row| (row.env, row.key, row.value))
+            .collect();
+
+        assert_eq!(expected, actual);
+    }
+
+    #[tokio::test]
+    async fn test_soft_delete_env() {
+        let db = test_db().await;
+
+        // Insert test data
+        db.insert("env1", "key1", "value1").await.unwrap();
+        db.insert("env1", "key2", "value2").await.unwrap();
+        db.insert("env2", "key2", "value3").await.unwrap();
+
+        // Delete environment
+        db.soft_delete_env("env1").await.unwrap();
+
+        // Query database directly to verify stored values
+        let rows = sqlx::query(
+            r"SELECT
+                env
+                , key
+                , value
+            FROM latest_envs",
+        )
+        .fetch_all(db.get_pool())
+        .await
+        .unwrap();
+
+        let expected: HashSet<(String, String, Option<String>)> = [
+            ("env1", "KEY1", None),
+            ("env1", "KEY2", None),
+            ("env2", "KEY2", Some("value3")),
+        ]
+        .into_iter()
+        .map(|(e, k, v)| (e.to_string(), k.to_string(), v.map(|x: &str| x.to_string())))
+        .collect();
+
+        let actual: HashSet<(String, String, Option<String>)> = rows
+            .into_iter()
+            .map(|row| {
+                (
+                    row.get::<String, _>("env"),
+                    row.get::<String, _>("key"),
+                    row.get::<Option<String>, _>("value"),
+                )
+            })
+            .collect();
+
+        assert_eq!(expected, actual);
+    }
+
+    #[tokio::test]
+    async fn test_delete_env() {
+        let db = test_db().await;
+
+        // Insert test data
+        db.insert("env1", "key1", "value1").await.unwrap();
+        db.insert("env1", "key2", "value2").await.unwrap();
+        db.insert("env2", "key2", "value3").await.unwrap();
+        db.insert("env3", "key2", "value3").await.unwrap();
+
+        // Delete environment
+        db.delete_env("env2").await.unwrap();
+
+        // Query database directly to verify stored values
+        let rows = sqlx::query(
+            r"SELECT
+                    env
+                    , key
+                    , value
+                FROM latest_envs",
+        )
+        .fetch_all(db.get_pool())
+        .await
+        .unwrap();
+
+        let expected: HashSet<(String, String, Option<String>)> = [
+            ("env1", "KEY1", Some("value1")),
+            ("env1", "KEY2", Some("value2")),
+            ("env3", "KEY2", Some("value3")),
+        ]
+        .into_iter()
+        .map(|(e, k, v)| (e.to_string(), k.to_string(), v.map(|x: &str| x.to_string())))
+        .collect();
+
+        let actual: HashSet<(String, String, Option<String>)> = rows
+            .into_iter()
+            .map(|row| {
+                (
+                    row.get::<String, _>("env"),
+                    row.get::<String, _>("key"),
+                    row.get::<Option<String>, _>("value"),
+                )
+            })
+            .collect();
+
+        assert_eq!(expected, actual);
+    }
+
+    #[tokio::test]
+    async fn test_delete_var_for_env() {
+        let db = test_db().await;
+
+        // Insert test data
+        db.insert("env1", "key1", "value1").await.unwrap();
+        db.insert("env1", "key2", "value2").await.unwrap();
+        db.insert("env2", "key2", "value3").await.unwrap();
+        db.insert("env3", "key2", "value3").await.unwrap();
+
+        db.soft_delete_key_in_env("env1", "key1").await.unwrap();
+        db.soft_delete_key_in_env("env2", "key2").await.unwrap();
+
+        // Query database directly to verify stored values
+        let rows = sqlx::query(
+            r"SELECT
+                env
+                , key
+                , value
+            FROM latest_envs",
+        )
+        .fetch_all(db.get_pool())
+        .await
+        .unwrap();
+
+        let expected: HashSet<(String, String, Option<String>)> = [
+            ("env1", "KEY2", Some("value2")),
+            ("env3", "KEY2", Some("value3")),
+            ("env1", "KEY1", None),
+            ("env2", "KEY2", None),
+        ]
+        .into_iter()
+        .map(|(e, k, v)| (e.to_string(), k.to_string(), v.map(|x: &str| x.to_string())))
+        .collect();
+
+        let actual: HashSet<(String, String, Option<String>)> = rows
+            .into_iter()
+            .map(|row| {
+                (
+                    row.get::<String, _>("env"),
+                    row.get::<String, _>("key"),
+                    row.get::<Option<String>, _>("value"),
+                )
+            })
+            .collect();
+
+        assert_eq!(expected, actual);
+    }
+
+    #[tokio::test]
+    async fn test_delete_var_all() {
+        let db = test_db().await;
+
+        // Insert test data
+        db.insert("env1", "key1", "value1").await.unwrap();
+        db.insert("env1", "key2", "value2").await.unwrap();
+        db.insert("env2", "key2", "value3").await.unwrap();
+        db.insert("env3", "key2", "value3").await.unwrap();
+
+        db.soft_delete_keys("key2").await.unwrap();
+
+        // Query database directly to verify stored values
+        let rows = sqlx::query(
+            r"SELECT
+                    env
+                    , key
+                    , value
+                FROM latest_envs",
+        )
+        .fetch_all(db.get_pool())
+        .await
+        .unwrap();
+
+        let expected: HashSet<(String, String, Option<String>)> = [
+            ("env1", "KEY1", Some("value1")),
+            ("env1", "KEY2", None),
+            ("env2", "KEY2", None),
+            ("env3", "KEY2", None),
+        ]
+        .into_iter()
+        .map(|(e, k, v)| (e.to_string(), k.to_string(), v.map(|x: &str| x.to_string())))
+        .collect();
+
+        let actual: HashSet<(String, String, Option<String>)> = rows
+            .into_iter()
+            .map(|row| {
+                (
+                    row.get::<String, _>("env"),
+                    row.get::<String, _>("key"),
+                    row.get::<Option<String>, _>("value"),
+                )
+            })
+            .collect();
+
+        assert_eq!(expected, actual);
+    }
+
+    #[tokio::test]
+    async fn test_duplicate_env() {
+        let db = test_db().await;
+
+        // Insert test data
+        db.insert("env1", "key1", "value1").await.unwrap();
+        db.insert("env1", "key2", "value2").await.unwrap();
+        db.insert("env2", "key2", "value3").await.unwrap();
+        db.insert("env3", "key2", "value3").await.unwrap();
+
+        // Duplicate env1 -> env4
+        db.duplicate_env("env1", "env4").await.unwrap();
+        assert!(
+            db.duplicate_env("env4", "env1").await.is_err(),
+            "cannot duplicate in already present env1"
+        );
+        assert!(
+            db.duplicate_env("env5", "env1").await.is_err(),
+            "cannot duplicate from non-existent env5"
+        );
+
+        // Query database directly to verify stored values
+        let rows = sqlx::query(
+            r"SELECT
+                env
+                , key
+                , value
+            FROM latest_envs",
+        )
+        .fetch_all(db.get_pool())
+        .await
+        .unwrap();
+
+        let expected: HashSet<(String, String, Option<String>)> = [
+            ("env1", "KEY1", Some("value1")),
+            ("env1", "KEY2", Some("value2")),
+            ("env2", "KEY2", Some("value3")),
+            ("env3", "KEY2", Some("value3")),
+            ("env4", "KEY1", Some("value1")),
+            ("env4", "KEY2", Some("value2")),
+        ]
+        .into_iter()
+        .map(|(e, k, v)| (e.to_string(), k.to_string(), v.map(|x: &str| x.to_string())))
+        .collect();
+
+        let actual: HashSet<(String, String, Option<String>)> = rows
+            .into_iter()
+            .map(|row| {
+                (
+                    row.get::<String, _>("env"),
+                    row.get::<String, _>("key"),
+                    row.get::<Option<String>, _>("value"),
+                )
+            })
+            .collect();
+
+        assert_eq!(expected, actual);
+    }
+
+    #[tokio::test]
+    async fn test_list_var_in_env() {
+        let db = test_db().await;
+
+        db.exec(
+            r"INSERT INTO environments (env, key, value, created_at)
+            VALUES
+                ('env1', 'KEY1', 'value1', 0),
+                ('env1', 'KEY1', NULL, 10),
+                ('env1', 'KEY2', 'value2', 100),
+                ('env1', 'KEY3', 'value3', 10),
+                ('env1', 'KEY4', 'value4', 0),
+                ('env2', 'KEY1', 'value1', 0),
+                ('env2', 'KEY2', 'value2', 0),
+                ('env2', 'KEY2', NULL, 10)
+            ",
+        )
+        .await
+        .unwrap();
+
+        assert_eq!(
+            vec![
+                EnvironmentRow::from("env1", "KEY4", "value4"),
+                EnvironmentRow::from("env1", "KEY3", "value3"),
+                EnvironmentRow::from("env1", "KEY2", "value2"),
+            ],
+            db.list_kv_in_env("env1").await.unwrap()
+        );
+        assert_eq!(
+            vec![EnvironmentRow::from("env2", "KEY1", "value1"),],
+            db.list_kv_in_env("env2").await.unwrap()
+        );
+    }
+
+    #[tokio::test]
+    async fn test_list_all_var_in_env() {
+        let db = test_db().await;
+
+        db.exec(
+            r"INSERT INTO environments (env, key, value, created_at)
+            VALUES
+                ('env1', 'KEY1', 'value1', 0),
+                ('env1', 'KEY1', NULL, 10),
+                ('env1', 'KEY2', 'value2', 100),
+                ('env1', 'KEY3', 'value3', 10),
+                ('env1', 'KEY4', 'value4', 0),
+                ('env2', 'KEY1', 'value1', 0),
+                ('env2', 'KEY2', 'value2', 0),
+                ('env2', 'KEY2', NULL, 10)
+            ",
+        )
+        .await
+        .unwrap();
+
+        assert_eq!(
+            vec![
+                EnvironmentRow::from("env1", "KEY4", "value4"),
+                EnvironmentRow::from("env1", "KEY3", "value3"),
+                EnvironmentRow::from("env1", "KEY2", "value2"),
+            ],
+            db.list_kv_in_env_alt("env1", Truncate::None).await.unwrap()
+        );
+        assert_eq!(
+            vec![
+                EnvironmentRow::from("env1", "KEY4", "val"),
+                EnvironmentRow::from("env1", "KEY3", "val"),
+                EnvironmentRow::from("env1", "KEY2", "val"),
+            ],
+            db.list_kv_in_env_alt("env1", Truncate::Max(3))
+                .await
+                .unwrap()
+        );
+        assert_eq!(
+            vec![
+                EnvironmentRow::from("env1", "KEY4", "value4"),
+                EnvironmentRow::from("env1", "KEY3", "value3"),
+                EnvironmentRow::from("env1", "KEY2", "value2"),
+            ],
+            db.list_kv_in_env_alt("env1", Truncate::Max(7))
+                .await
+                .unwrap()
+        );
+        assert_eq!(
+            vec![
+                EnvironmentRow::from("env1", "KEY4", ""),
+                EnvironmentRow::from("env1", "KEY3", ""),
+                EnvironmentRow::from("env1", "KEY2", ""),
+            ],
+            db.list_kv_in_env_alt("env1", Truncate::Max(0))
+                .await
+                .unwrap()
+        );
+    }
+
+    #[tokio::test]
+    async fn test_list_envs() {
+        let db = test_db().await;
+
+        db.exec(
+            r"INSERT INTO environments (env, key, value, created_at)
+                VALUES
+                    ('env1', 'KEY1', 'value1', 0),
+                    ('env1', 'KEY1', NULL, 10),
+                    ('env1', 'KEY2', 'value2', 100),
+                    ('env1', 'KEY3', 'value3', 10),
+                    ('env1', 'KEY4', 'value4', 0),
+                    ('env2', 'KEY1', 'value1', 0),
+                    ('env2', 'KEY2', 'value2', 0),
+                    ('env2', 'KEY2', NULL, 10),
+                    ('env3', 'KEY2', NULL, 10)
+                ",
+        )
+        .await
+        .unwrap();
+
+        assert_eq!(
+            vec![
+                Environment::from("env1"),
+                Environment::from("env2"),
+                Environment::from("env3"),
+            ],
+            db.list_environments().await.unwrap()
+        );
+    }
 }
