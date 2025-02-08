@@ -1,7 +1,7 @@
-use sqlx::SqlitePool;
+use sqlx::{sqlite::SqliteRow, FromRow, SqlitePool, Row};
 use std::{env, io};
 
-use crate::{std_err, err};
+use crate::{err, std_err};
 
 pub(crate) type EnvelopeResult<T> = Result<T, Box<dyn std::error::Error>>;
 
@@ -32,6 +32,31 @@ impl EnvironmentRow {
             key: k.to_owned(),
             value: v.to_owned(),
         }
+    }
+}
+
+#[derive(Debug, PartialEq, Eq)]
+pub enum EnvironmentDiff {
+    InFirst(String, String),
+    InSecond(String, String),
+    Different(String, String, String),
+}
+
+impl FromRow<'_, SqliteRow> for EnvironmentDiff {
+    fn from_row(row: &SqliteRow) -> sqlx::Result<Self> {
+        let (key, value) = (
+            row.try_get::<String, _>("key")?,
+            row.try_get::<String, _>("value")?,
+        );
+
+        let val = match row.try_get::<String, _>("type")?.as_str() {
+            "+" => Self::InFirst(key, value),
+            "-" => Self::InSecond(key, value),
+            "/" => Self::Different(key, value, row.try_get("diff")?),
+            _ => panic!("unknown value"),
+        };
+
+        Ok(val)
     }
 }
 
@@ -281,6 +306,53 @@ impl EnvelopeDb {
             .fetch_all(&self.db)
             .await
             .map_err(|e| std_err!("db error: {}", e))
+    }
+
+    /// This returns the diff between the two specified environments
+    pub async fn diff(&self, e1: &str, e2: &str) -> io::Result<Vec<EnvironmentDiff>> {
+        for e in [e1, e2] {
+            if !self.env_exists(e).await? {
+                return err!("cannot diff non existent environment {}", e);
+            }
+        }
+
+        sqlx::query_as(
+            r"WITH base AS (
+                SELECT key, value, env
+                FROM active_envs
+                WHERE env IN ($1, $2)
+            )
+            SELECT e1.key, e1.value, null AS diff, '+' AS type
+            FROM base e1
+            WHERE e1.env = $1
+            AND NOT EXISTS (
+                SELECT 1 FROM base e2
+                WHERE e2.env = $2
+                AND e2.key = e1.key
+            )
+            UNION ALL
+            SELECT e2.key, e2.value, null AS diff, '-' AS type
+            FROM base e2
+            WHERE e2.env = $2
+            AND NOT EXISTS (
+                SELECT 1 FROM base e1
+                WHERE e1.env = $1
+                AND e1.key = e2.key
+            )
+            UNION ALL
+            SELECT e1.key, e1.value, e2.value as diff, '/' AS type
+            FROM base e1
+            JOIN base e2 ON e1.key = e2.key
+            WHERE e1.env = $1
+            AND e2.env = $2
+            AND e1.value != e2.value
+            ORDER BY key",
+        )
+        .bind(e1)
+        .bind(e2)
+        .fetch_all(&self.db)
+        .await
+        .map_err(|e| std_err!("db error: {}", e))
     }
 
     #[cfg(test)]
@@ -753,6 +825,52 @@ mod tests {
                 Environment::from("env3"),
             ],
             db.list_environments().await.unwrap()
+        );
+    }
+
+    #[tokio::test]
+    async fn test_diff() {
+        let db = test_db().await;
+
+        db.exec(
+            r"INSERT INTO environments (env, key, value, created_at)
+            VALUES
+            ('env1', 'KEY1', 'value1', 0),
+            ('env1', 'KEY1', NULL, 10),
+            ('env1', 'KEY2', 'value2', 100),
+            ('env1', 'KEY3', 'value3', 10),
+            ('env1', 'KEY4', 'value4', 0),
+            ('env2', 'KEY1', 'value1', 0),
+            ('env2', 'KEY2', 'value2', 0),
+            ('env1', 'MATCH', 'value1', 0),
+            ('env2', 'MATCH', 'value1', 0),
+            ('env1', 'NOTMATCH', 'value1', 0),
+            ('env2', 'NOTMATCH', 'value2', 0),
+            ('env2', 'KEY2', NULL, 10),
+            ('env3', 'KEY2', NULL, 10)",
+        )
+        .await
+        .unwrap();
+
+        assert_eq!(
+            vec![
+                EnvironmentDiff::InSecond("KEY1".into(), "value1".into()),
+                EnvironmentDiff::InFirst("KEY2".into(), "value2".into()),
+                EnvironmentDiff::InFirst("KEY3".into(), "value3".into()),
+                EnvironmentDiff::InFirst("KEY4".into(), "value4".into()),
+                EnvironmentDiff::Different("NOTMATCH".into(), "value1".into(), "value2".into())
+            ],
+            db.diff("env1", "env2").await.unwrap()
+        );
+        assert_eq!(
+            vec![
+                EnvironmentDiff::InFirst("KEY1".into(), "value1".into()),
+                EnvironmentDiff::InSecond("KEY2".into(), "value2".into()),
+                EnvironmentDiff::InSecond("KEY3".into(), "value3".into()),
+                EnvironmentDiff::InSecond("KEY4".into(), "value4".into()),
+                EnvironmentDiff::Different("NOTMATCH".into(), "value2".into(), "value1".into())
+            ],
+            db.diff("env2", "env1").await.unwrap()
         );
     }
 }

@@ -6,6 +6,7 @@ use crate::{db::EnvelopeDb, ops};
 
 mod add;
 mod delete;
+mod diff;
 mod drop;
 mod duplicate;
 mod edit;
@@ -26,6 +27,8 @@ pub enum EnvelopeCmd {
     Drop(drop::Cmd),
 
     Duplicate(duplicate::Cmd),
+
+    Diff(diff::Cmd),
 
     Export(export::Cmd),
 
@@ -51,6 +54,7 @@ impl EnvelopeCmd {
             Self::Delete(delete) => delete.run(&db).await?,
             Self::Drop(drop) => drop.run(&db).await?,
             Self::Duplicate(duplicate) => duplicate.run(&db).await?,
+            Self::Diff(diff) => diff.run(&db).await?,
             Self::Export(export) => export.run(&db).await?,
             Self::Edit(edit) => edit.run(&db).await?,
             Self::Import(import) => import.run(&db).await?,
