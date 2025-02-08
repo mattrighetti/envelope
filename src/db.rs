@@ -40,15 +40,17 @@ pub struct EnvironmentRowNullable {
     pub env: String,
     pub key: String,
     pub value: Option<String>,
+    pub created_at: String,
 }
 
 #[cfg(test)]
 impl EnvironmentRowNullable {
-    fn from(e: &str, k: &str, v: Option<&str>) -> Self {
+    fn from(e: &str, k: &str, v: Option<&str>, date: &str) -> Self {
         Self {
             env: e.to_owned(),
             key: k.to_owned(),
             value: v.map(|x| x.to_owned()),
+            created_at: date.to_owned(),
         }
     }
 }
@@ -403,7 +405,7 @@ impl EnvelopeDb {
     /// Lists all values for an env key pair
     pub async fn history(&self, env: &str, key: &str) -> io::Result<Vec<EnvironmentRowNullable>> {
         sqlx::query_as(
-            "SELECT *
+            "SELECT env, key, value, CAST(DATETIME(created_at, 'unixepoch') AS text) AS created_at
             FROM environments
             WHERE
                 env = $1 AND
@@ -998,7 +1000,7 @@ mod tests {
                 ('env1', 'KEY1', NULL, 10),
                 ('env1', 'KEY1', 'value2', 100),
                 ('env1', 'KEY2', 'value3', 10),
-                ('env1', 'KEY2', 'value4', 0),
+                ('env1', 'KEY2', 'value4', 0)
             ",
         )
         .await
@@ -1006,9 +1008,9 @@ mod tests {
 
         assert_eq!(
             vec![
-                EnvironmentRowNullable::from("env1", "KEY1", Some("value1")),
-                EnvironmentRowNullable::from("env1", "KEY1", None),
-                EnvironmentRowNullable::from("env1", "KEY1", Some("value2")),
+                EnvironmentRowNullable::from("env1", "KEY1", Some("value1"), "1970-01-01 00:00:00"),
+                EnvironmentRowNullable::from("env1", "KEY1", None, "1970-01-01 00:00:10"),
+                EnvironmentRowNullable::from("env1", "KEY1", Some("value2"), "1970-01-01 00:01:40"),
             ],
             db.history("env1", "key1").await.unwrap()
         );

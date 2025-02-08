@@ -9,11 +9,17 @@ pub async fn history<W: Write>(
     key: &str,
 ) -> Result<()> {
     let kvs: Vec<EnvironmentRowNullable> = db.history(env, key).await?;
-    for EnvironmentRowNullable { key, value, .. } in kvs {
+    for EnvironmentRowNullable {
+        key,
+        value,
+        created_at,
+        ..
+    } in kvs
+    {
         if let Some(value) = value {
-            writeln!(writer, "{}={}", key, value)?;
+            writeln!(writer, "{} {}={}", created_at, key, value)?;
         } else {
-            writeln!(writer, "{} inactive", key)?;
+            writeln!(writer, "{} {} inactive", created_at, key)?;
         }
     }
 
