@@ -171,10 +171,14 @@ dev
 
 ### Diff
 Diff two different environments
-```sh
+```diff
 $ envelope add local db_connection http://localhost:3030
 $ envelope add local dev true
 $ envelope add prod db_connection https://proddb.com
 $ envelope add prod db_user pg
 $ envelope add prod db_pwd somepwd
+/ DB_CONNECTION=http://localhost:3030 -> https://proddb.com
+- DB_PWD=somepwd
+- DB_USER=pg
++ DEV=true
 ```
