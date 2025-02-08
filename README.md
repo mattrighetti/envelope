@@ -207,7 +207,7 @@ $ envelope add local db_connection http://localhost:3030
 $ envelope add local db_connection http://localhost:2222
 $ envelope add local db_connection http://localhost:3333
 $ envelope history local db_connection
-DB_CONNECTION=http://localhost:3030
-DB_CONNECTION=http://localhost:2222
-DB_CONNECTION=http://localhost:3333
+2025-01-01 00:00:00 DB_CONNECTION=http://localhost:3030
+2025-02-01 00:00:00 DB_CONNECTION=http://localhost:2222
+2025-03-01 00:00:00 DB_CONNECTION=http://localhost:3333
 ```
