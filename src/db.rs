@@ -933,8 +933,7 @@ mod tests {
         db.revert("env1", "key1").await.unwrap();
         assert_eq!(
             db.list_kv_in_env("env1").await.unwrap(),
-            vec![EnvironmentRow::from("env1", "KEY1", "value1")],
-            "env1 should be empty"
+            vec![EnvironmentRow::from("env1", "KEY1", "value1")]
         );
     }
 }
