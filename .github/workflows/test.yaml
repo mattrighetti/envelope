@@ -3,9 +3,9 @@ on:
   pull_request:
   push:
     branches:
-    - master
+      - master
   schedule:
-  - cron: '00 01 * * *'
+    - cron: "00 01 * * *"
 
 permissions:
   contents: read
@@ -34,41 +34,41 @@ jobs:
       fail-fast: false
       matrix:
         include:
-        - build: pinned
-          os: ubuntu-latest
-          rust: 1.74
-        - build: stable
-          os: ubuntu-latest
-          rust: stable
-        - build: beta
-          os: ubuntu-latest
-          rust: beta
-        - build: nightly
-          os: ubuntu-latest
-          rust: nightly
-        - build: stable-musl
-          os: ubuntu-latest
-          rust: stable
-          target: x86_64-unknown-linux-musl
-        - build: stable-x86
-          os: ubuntu-latest
-          rust: stable
-          target: i686-unknown-linux-gnu
-        - build: stable-aarch64
-          os: ubuntu-latest
-          rust: stable
-          target: aarch64-unknown-linux-gnu
-        - build: stable-powerpc64
-          os: ubuntu-latest
-          rust: stable
-          target: powerpc64-unknown-linux-gnu
-        - build: stable-s390x
-          os: ubuntu-latest
-          rust: stable
-          target: s390x-unknown-linux-gnu
-        - build: macos
-          os: macos-latest
-          rust: nightly
+          - build: pinned
+            os: ubuntu-latest
+            rust: 1.84
+          - build: stable
+            os: ubuntu-latest
+            rust: stable
+          - build: beta
+            os: ubuntu-latest
+            rust: beta
+          - build: nightly
+            os: ubuntu-latest
+            rust: nightly
+          - build: stable-musl
+            os: ubuntu-latest
+            rust: stable
+            target: x86_64-unknown-linux-musl
+          - build: stable-x86
+            os: ubuntu-latest
+            rust: stable
+            target: i686-unknown-linux-gnu
+          - build: stable-aarch64
+            os: ubuntu-latest
+            rust: stable
+            target: aarch64-unknown-linux-gnu
+          - build: stable-powerpc64
+            os: ubuntu-latest
+            rust: stable
+            target: powerpc64-unknown-linux-gnu
+          - build: stable-s390x
+            os: ubuntu-latest
+            rust: stable
+            target: s390x-unknown-linux-gnu
+          - build: macos
+            os: macos-latest
+            rust: nightly
     steps:
       - name: Checkout repo
         uses: actions/checkout@v4
@@ -116,15 +116,15 @@ jobs:
   rustfmt:
     runs-on: ubuntu-latest
     steps:
-    - name: Checkout repository
-      uses: actions/checkout@v4
-    - name: Install Rust
-      uses: dtolnay/rust-toolchain@master
-      with:
-        toolchain: stable
-        components: rustfmt
-    - name: Check formatting
-      run: cargo fmt --all --check
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@master
+        with:
+          toolchain: stable
+          components: rustfmt
+      - name: Check formatting
+        run: cargo fmt --all --check
 
   docs:
     runs-on: ubuntu-latest
