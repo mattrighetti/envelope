@@ -169,3 +169,12 @@ $ envelope check
 dev
 ```
 
+### Diff
+Diff two different environments
+```sh
+$ envelope add local db_connection http://localhost:3030
+$ envelope add local dev true
+$ envelope add prod db_connection https://proddb.com
+$ envelope add prod db_user pg
+$ envelope add prod db_pwd somepwd
+```
