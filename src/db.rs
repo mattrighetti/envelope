@@ -35,6 +35,24 @@ impl EnvironmentRow {
     }
 }
 
+#[derive(Debug, Clone, PartialEq, Eq, sqlx::FromRow)]
+pub struct EnvironmentRowNullable {
+    pub env: String,
+    pub key: String,
+    pub value: Option<String>,
+}
+
+#[cfg(test)]
+impl EnvironmentRowNullable {
+    fn from(e: &str, k: &str, v: Option<&str>) -> Self {
+        Self {
+            env: e.to_owned(),
+            key: k.to_owned(),
+            value: v.map(|x| x.to_owned()),
+        }
+    }
+}
+
 #[derive(Debug, PartialEq, Eq)]
 pub enum EnvironmentDiff {
     InFirst(String, String),
@@ -380,6 +398,23 @@ impl EnvelopeDb {
         .map_err(|e| std_err!("db error: {}", e))?;
 
         Ok(())
+    }
+
+    /// Lists all values for an env key pair
+    pub async fn history(&self, env: &str, key: &str) -> io::Result<Vec<EnvironmentRowNullable>> {
+        sqlx::query_as(
+            "SELECT *
+            FROM environments
+            WHERE
+                env = $1 AND
+                key = upper($2)
+            ORDER BY created_at",
+        )
+        .bind(env)
+        .bind(key)
+        .fetch_all(&self.db)
+        .await
+        .map_err(|e| std_err!("db error: {}", e))
     }
 
     #[cfg(test)]
@@ -949,6 +984,33 @@ mod tests {
             db.list_kv_in_env("env2").await.unwrap(),
             vec![EnvironmentRow::from("env2", "KEY1", "value2")],
             "env2 should remain untouched"
+        );
+    }
+
+    #[tokio::test]
+    async fn test_ek_history() {
+        let db = test_db().await;
+
+        db.exec(
+            r"INSERT INTO environments (env, key, value, created_at)
+            VALUES
+                ('env1', 'KEY1', 'value1', 0),
+                ('env1', 'KEY1', NULL, 10),
+                ('env1', 'KEY1', 'value2', 100),
+                ('env1', 'KEY2', 'value3', 10),
+                ('env1', 'KEY2', 'value4', 0),
+            ",
+        )
+        .await
+        .unwrap();
+
+        assert_eq!(
+            vec![
+                EnvironmentRowNullable::from("env1", "KEY1", Some("value1")),
+                EnvironmentRowNullable::from("env1", "KEY1", None),
+                EnvironmentRowNullable::from("env1", "KEY1", Some("value2")),
+            ],
+            db.history("env1", "key1").await.unwrap()
         );
     }
 }

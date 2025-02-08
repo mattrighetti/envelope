@@ -6,9 +6,11 @@ mod drop;
 mod duplicate;
 mod edit;
 mod export;
+mod history;
 mod list;
 mod revert;
 
+pub use history::*;
 pub use revert::*;
 pub use diff::*;
 pub use add::*;
