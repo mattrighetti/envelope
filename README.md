@@ -177,8 +177,25 @@ $ envelope add local dev true
 $ envelope add prod db_connection https://proddb.com
 $ envelope add prod db_user pg
 $ envelope add prod db_pwd somepwd
-/ DB_CONNECTION=http://localhost:3030 -> https://proddb.com
+$ envelope diff local prod
+# DB_CONNECTION=http://localhost:3030 -> https://proddb.com
 - DB_PWD=somepwd
 - DB_USER=pg
 + DEV=true
+```
+
+### Revert
+Revert a key value of an environment to a previous value
+```diff
+$ envelope add local db_connection http://localhost:3030
+$ envelope add local db_connection http://localhost:2222
+$ envelope add local db_connection http://localhost:3333
+$ envelope list local
+DB_CONNECTION=http://localhost:3333
+$ envelope revert local db_connection
+$ envelope list local
+DB_CONNECTION=http://localhost:2222
+$ envelope revert local db_connection
+$ envelope list local
+DB_CONNECTION=http://localhost:3030
 ```

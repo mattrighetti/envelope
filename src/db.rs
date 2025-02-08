@@ -355,6 +355,33 @@ impl EnvelopeDb {
         .map_err(|e| std_err!("db error: {}", e))
     }
 
+    /// Reverts a specific key-value in a specific env by deleting the most
+    /// recent entry in database
+    pub async fn revert(&self, env: &str, key: &str) -> io::Result<()> {
+        sqlx::query(
+            r"DELETE FROM environments
+            WHERE
+                env = $1 AND
+                key = upper($2) AND
+                EXISTS (
+                    SELECT 1
+                    FROM latest_envs
+                    WHERE
+                        latest_envs.env = environments.env AND
+                        latest_envs.key = environments.key AND
+                        latest_envs.created_at = environments.created_at AND
+                        (latest_envs.value IS environments.value OR latest_envs.value = environments.value)
+                )",
+        )
+        .bind(env)
+        .bind(key)
+        .execute(&self.db)
+        .await
+        .map_err(|e| std_err!("db error: {}", e))?;
+
+        Ok(())
+    }
+
     #[cfg(test)]
     async fn exec(&self, sql: &str) -> io::Result<()> {
         sqlx::query(sql)
@@ -871,6 +898,43 @@ mod tests {
                 EnvironmentDiff::Different("NOTMATCH".into(), "value2".into(), "value1".into())
             ],
             db.diff("env2", "env1").await.unwrap()
+        );
+    }
+
+    #[tokio::test]
+    async fn test_revert() {
+        let db = test_db().await;
+
+        db.exec(
+            r"INSERT INTO environments (env, key, value, created_at)
+                VALUES
+                ('env1', 'KEY1', 'value1', 0),
+                ('env1', 'KEY1', NULL, 10),
+                ('env1', 'KEY1', 'value2', 100)",
+        )
+        .await
+        .unwrap();
+
+        assert_eq!(
+            db.list_kv_in_env("env1").await.unwrap(),
+            vec![EnvironmentRow::from("env1", "KEY1", "value2")]
+        );
+
+        // this will delete ('env1', 'KEY1', 'value2', 100)
+        // and will invalidate the value
+        db.revert("env1", "key1").await.unwrap();
+        assert_eq!(
+            db.list_kv_in_env("env1").await.unwrap(),
+            vec![],
+            "env1 should be empty"
+        );
+
+        // this will delete ('env1', 'KEY1', NULL, 10)
+        db.revert("env1", "key1").await.unwrap();
+        assert_eq!(
+            db.list_kv_in_env("env1").await.unwrap(),
+            vec![EnvironmentRow::from("env1", "KEY1", "value1")],
+            "env1 should be empty"
         );
     }
 }
