@@ -11,6 +11,7 @@ mod drop;
 mod duplicate;
 mod edit;
 mod export;
+mod history;
 mod import;
 mod list;
 mod revert;
@@ -34,6 +35,8 @@ pub enum EnvelopeCmd {
     Export(export::Cmd),
 
     Edit(edit::Cmd),
+
+    History(history::Cmd),
 
     /// Initialize envelope
     Init,
@@ -61,6 +64,7 @@ impl EnvelopeCmd {
             Self::Export(export) => export.run(&db).await?,
             Self::Edit(edit) => edit.run(&db).await?,
             Self::Import(import) => import.run(&db).await?,
+            Self::History(history) => history.run(&db).await?,
             Self::List(list) => list.run(&db).await?,
             Self::Revert(revert) => revert.run(&db).await?,
             _ => {}
