@@ -28,7 +28,7 @@ impl Cmd {
                     ops::list_raw(&mut io::stdout(), db, env).await?;
                 } else {
                     let truncate = match self.truncate {
-                        true => db::Truncate::Range(0, 60),
+                        true => db::Truncate::Max(60),
                         false => db::Truncate::None,
                     };
                     ops::list(db, env, truncate).await?;
