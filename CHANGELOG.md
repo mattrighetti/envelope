@@ -2,6 +2,12 @@
 All notable changes to this project will be documented in this file. See [conventional commits](https://www.conventionalcommits.org/) for commit guidelines.
 
 - - -
+## 0.4.0 - 2025-02-08
+#### Features
+- add diff command (#34) - (dd9945c) - Mattia Righetti
+
+- - -
+
 ## 0.3.12 - 2025-02-08
 #### Bug Fixes
 - misc fixes and refactoring - (d5ac1ad) - Mattia Righetti
