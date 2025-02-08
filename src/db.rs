@@ -832,13 +832,6 @@ mod tests {
     async fn test_diff() {
         let db = test_db().await;
 
-        // insert some values and simulate deletion of some other
-        // The following are the active environments:
-        // - env1: KEY2=value2
-        // - env1: KEY3=value3
-        // - env1: KEY4=value4
-        // - env2: KEY1=value1
-        // - env3: <empty>
         db.exec(
             r"INSERT INTO environments (env, key, value, created_at)
             VALUES
