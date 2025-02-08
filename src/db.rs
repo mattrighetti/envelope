@@ -910,7 +910,8 @@ mod tests {
                 VALUES
                 ('env1', 'KEY1', 'value1', 0),
                 ('env1', 'KEY1', NULL, 10),
-                ('env1', 'KEY1', 'value2', 100)",
+                ('env1', 'KEY1', 'value2', 100),
+                ('env2', 'KEY1', 'value2', 10)",
         )
         .await
         .unwrap();
@@ -918,6 +919,10 @@ mod tests {
         assert_eq!(
             db.list_kv_in_env("env1").await.unwrap(),
             vec![EnvironmentRow::from("env1", "KEY1", "value2")]
+        );
+        assert_eq!(
+            db.list_kv_in_env("env2").await.unwrap(),
+            vec![EnvironmentRow::from("env2", "KEY1", "value2")]
         );
 
         // this will delete ('env1', 'KEY1', 'value2', 100)
@@ -928,12 +933,22 @@ mod tests {
             vec![],
             "env1 should be empty"
         );
+        assert_eq!(
+            db.list_kv_in_env("env2").await.unwrap(),
+            vec![EnvironmentRow::from("env2", "KEY1", "value2")],
+            "env2 should remain untouched"
+        );
 
         // this will delete ('env1', 'KEY1', NULL, 10)
         db.revert("env1", "key1").await.unwrap();
         assert_eq!(
             db.list_kv_in_env("env1").await.unwrap(),
             vec![EnvironmentRow::from("env1", "KEY1", "value1")]
+        );
+        assert_eq!(
+            db.list_kv_in_env("env2").await.unwrap(),
+            vec![EnvironmentRow::from("env2", "KEY1", "value2")],
+            "env2 should remain untouched"
         );
     }
 }
