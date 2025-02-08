@@ -1,7 +1,7 @@
 use sqlx::{sqlite::SqliteRow, FromRow, SqlitePool, Row};
 use std::{env, io};
 
-use crate::{std_err, err};
+use crate::{err, std_err};
 
 pub(crate) type EnvelopeResult<T> = Result<T, Box<dyn std::error::Error>>;
 
@@ -310,6 +310,12 @@ impl EnvelopeDb {
 
     /// This returns the diff between the two specified environments
     pub async fn diff(&self, e1: &str, e2: &str) -> io::Result<Vec<EnvironmentDiff>> {
+        for e in [e1, e2] {
+            if !self.env_exists(e).await? {
+                return err!("cannot diff non existent environment {}", e);
+            }
+        }
+
         sqlx::query_as(
             r"WITH base AS (
                 SELECT key, value, env
