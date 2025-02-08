@@ -1,7 +1,7 @@
 use sqlx::SqlitePool;
 use std::{env, io};
 
-use crate::std_err;
+use crate::{std_err, err};
 
 pub(crate) type EnvelopeResult<T> = Result<T, Box<dyn std::error::Error>>;
 
@@ -199,17 +199,18 @@ impl EnvelopeDb {
         Ok(())
     }
 
-    /// duplicates `src_env` in a new environment `tgt_env`.
+    /// duplicates `source_env` in a new environment `target_env`.
     /// In order for this to work, `tgt_env` must not be present.
     pub async fn duplicate_env(&self, source_env: &str, target_env: &str) -> io::Result<()> {
         if !self.env_exists(source_env).await? {
-            return Err(io::Error::other("source environment does not exist"));
+            return err!("source environment {} does not exist", source_env);
         }
 
         if self.env_exists(target_env).await? {
-            return Err(io::Error::other(
-                "duplicating into an already present target environment is not allowed",
-            ));
+            return err!(
+                "duplicating into existing target environment {} is not allowed",
+                target_env
+            );
         }
 
         sqlx::query(
