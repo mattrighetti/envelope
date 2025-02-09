@@ -8,12 +8,12 @@ use crate::ops;
 /// Valid sorting types
 #[derive(Debug, Clone, clap::ValueEnum)]
 enum Sort {
-    #[clap(alias = "ka")]
-    KeyAsc,
-    #[clap(alias = "va")]
-    ValueAsc,
-    #[clap(alias = "da")]
-    DateAsc,
+    #[clap(alias = "k")]
+    Key,
+    #[clap(alias = "v")]
+    Value,
+    #[clap(alias = "d")]
+    Date,
     #[clap(alias = "kd")]
     KeyDesc,
     #[clap(alias = "vd")]
@@ -25,11 +25,11 @@ enum Sort {
 impl Sort {
     fn to_str(&self) -> &str {
         match self {
-            Self::DateAsc => "da",
+            Self::Date => "d",
             Self::DateDesc => "dd",
-            Self::KeyAsc => "ka",
+            Self::Key => "k",
             Self::KeyDesc => "kd",
-            Self::ValueAsc => "va",
+            Self::Value => "v",
             Self::ValueDesc => "vd",
         }
     }

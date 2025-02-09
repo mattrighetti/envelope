@@ -313,15 +313,15 @@ impl EnvelopeDb {
             WHERE env = $1
             ORDER BY
                 CASE
-                    WHEN $3 = 'ka' THEN key END,
+                    WHEN $3 = 'k' THEN key END,
                 CASE
                     WHEN $3 = 'kd' THEN key END DESC,
                 CASE
-                    WHEN $3 = 'va' THEN value END,
+                    WHEN $3 = 'v' THEN value END,
                 CASE
                     WHEN $3 = 'vd' THEN value END DESC,
                 CASE
-                    WHEN $3 = 'da' THEN created_at END,
+                    WHEN $3 = 'd' THEN created_at END,
                 CASE
                     WHEN $3 = 'dd' THEN created_at END DESC,
                 created_at ASC",
@@ -901,7 +901,7 @@ mod tests {
                 EnvironmentRow::from("env1", "KEY3", "value3"),
                 EnvironmentRow::from("env1", "KEY4", "value4"),
             ],
-            db.list_kv_in_env_alt("env1", Truncate::None, "ka")
+            db.list_kv_in_env_alt("env1", Truncate::None, "k")
                 .await
                 .unwrap()
         );
@@ -923,7 +923,7 @@ mod tests {
                 EnvironmentRow::from("env1", "KEY2", "value2"),
                 EnvironmentRow::from("env1", "KEY4", "value4"),
             ],
-            db.list_kv_in_env_alt("env1", Truncate::None, "da")
+            db.list_kv_in_env_alt("env1", Truncate::None, "d")
                 .await
                 .unwrap()
         );
@@ -945,7 +945,7 @@ mod tests {
                 EnvironmentRow::from("env1", "KEY3", "value3"),
                 EnvironmentRow::from("env1", "KEY4", "value4"),
             ],
-            db.list_kv_in_env_alt("env1", Truncate::None, "va")
+            db.list_kv_in_env_alt("env1", Truncate::None, "v")
                 .await
                 .unwrap()
         );
