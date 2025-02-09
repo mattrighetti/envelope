@@ -1,8 +1,9 @@
-use clap::Parser;
-
 use std::io::Result;
 
-use crate::{db::EnvelopeDb, err, ops};
+use clap::Parser;
+
+use crate::db::EnvelopeDb;
+use crate::{err, ops};
 
 /// Create a copy of another environment
 #[derive(Parser)]

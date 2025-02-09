@@ -1,5 +1,7 @@
-use sqlx::{sqlite::SqliteRow, FromRow, SqlitePool, Row};
 use std::{env, io};
+
+use sqlx::sqlite::SqliteRow;
+use sqlx::{FromRow, Row, SqlitePool};
 
 use crate::{err, std_err};
 
@@ -326,8 +328,8 @@ impl EnvelopeDb {
         .map_err(|e| std_err!("db error: {}", e))
     }
 
-    // lists environments present in the database. Environments that only contain deletes variables
-    // will be listed as well.
+    // lists environments present in the database. Environments that only contain
+    // deletes variables will be listed as well.
     pub async fn list_environments(&self) -> io::Result<Vec<Environment>> {
         sqlx::query_as(r"SELECT DISTINCT env FROM environments ORDER BY created_at")
             .fetch_all(&self.db)
@@ -452,7 +454,9 @@ pub async fn test_db() -> EnvelopeDb {
 #[cfg(test)]
 mod tests {
     use std::collections::HashSet;
+
     use sqlx::Row;
+
     use super::*;
 
     #[tokio::test]

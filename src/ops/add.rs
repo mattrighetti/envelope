@@ -1,5 +1,4 @@
-use std::io::Result;
-use std::io::{BufRead, Write};
+use std::io::{BufRead, Result, Write};
 
 use crate::db::EnvelopeDb;
 use crate::err;
@@ -46,9 +45,10 @@ pub async fn import<W: Write, R: BufRead>(
 
 #[cfg(test)]
 mod test {
+    use std::io::BufReader;
+
     use super::*;
     use crate::db::{test_db, EnvironmentRow};
-    use std::io::BufReader;
 
     pub fn stdin_input(s: &str) -> BufReader<&[u8]> {
         BufReader::new(s.as_bytes())

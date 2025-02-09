@@ -1,10 +1,10 @@
-use crate::db::{EnvelopeDb, Environment, EnvironmentRow, Truncate};
-use crate::std_err;
+use std::io;
+use std::io::{BufRead, Result, Write};
 
 use prettytable::{row, Table};
 
-use std::io;
-use std::io::{BufRead, Result, Write};
+use crate::db::{EnvelopeDb, Environment, EnvironmentRow, Truncate};
+use crate::std_err;
 
 pub async fn print_from_stdin() -> Result<()> {
     let mut table = Table::new();

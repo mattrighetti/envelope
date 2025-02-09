@@ -1,10 +1,9 @@
-use std::{
-    env,
-    fs::OpenOptions,
-    io::{Read, Result, Write},
-};
+use std::env;
+use std::fs::OpenOptions;
+use std::io::{Read, Result, Write};
 
-use crate::{std_err, subproc::ChildProcess};
+use crate::std_err;
+use crate::subproc::ChildProcess;
 
 fn editor_cmd() -> String {
     let editor = "vim";

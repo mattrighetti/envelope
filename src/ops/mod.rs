@@ -9,13 +9,13 @@ mod history;
 mod list;
 mod revert;
 
-pub use history::*;
-pub use revert::*;
-pub use diff::*;
 pub use add::*;
 pub use check::*;
 pub use delete::*;
+pub use diff::*;
 pub use drop::*;
 pub use duplicate::*;
 pub use edit::*;
+pub use history::*;
 pub use list::*;
+pub use revert::*;

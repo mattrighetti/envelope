@@ -1,8 +1,6 @@
-use std::{
-    io::Result,
-    process::{Command, ExitStatus},
-    collections::HashMap,
-};
+use std::collections::HashMap;
+use std::io::Result;
+use std::process::{Command, ExitStatus};
 
 #[derive(Debug)]
 pub struct ChildProcess<'a> {

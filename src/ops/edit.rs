@@ -1,9 +1,7 @@
 use std::io::{BufRead, BufReader, Result, Write};
 
-use crate::{
-    db::{EnvelopeDb, EnvironmentRow, Truncate},
-    editor,
-};
+use crate::db::{EnvelopeDb, EnvironmentRow, Truncate};
+use crate::editor;
 
 pub struct EditorData {
     delete: Vec<String>,
@@ -60,8 +58,9 @@ pub async fn edit(db: &EnvelopeDb, env: &str) -> Result<()> {
 
 #[cfg(test)]
 mod test {
-    use super::*;
     use std::io::BufReader;
+
+    use super::*;
 
     #[test]
     fn test_upsert() {

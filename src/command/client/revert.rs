@@ -1,7 +1,9 @@
-use clap::Parser;
 use std::io::Result;
 
-use crate::{db::EnvelopeDb, ops};
+use clap::Parser;
+
+use crate::db::EnvelopeDb;
+use crate::ops;
 
 /// Revert environment variable to previous value
 #[derive(Parser)]

@@ -1,0 +1,7 @@
+group_imports = "StdExternalCrate" # Unstable
+imports_granularity = "Module"     # Unstable
+format_code_in_doc_comments = true
+wrap_comments = true
+format_strings = true
+use_field_init_shorthand = true
+merge_derives = false

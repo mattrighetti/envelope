@@ -1,6 +1,7 @@
-use clap::Parser;
 use std::io;
 use std::io::Result;
+
+use clap::Parser;
 
 use crate::db::{self, EnvelopeDb};
 use crate::ops;

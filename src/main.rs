@@ -4,10 +4,10 @@ mod editor;
 mod error;
 mod ops;
 mod subproc;
+use std::io::Write;
 
 use clap::Parser;
 use command::EnvelopeCmd;
-use std::io::Write;
 
 const VERSION: &str = env!("CARGO_PKG_VERSION");
 

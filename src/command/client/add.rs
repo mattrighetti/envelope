@@ -1,8 +1,9 @@
-use clap::Parser;
-
 use std::io::{BufRead, Result, Write};
 
-use crate::{db::EnvelopeDb, err, ops};
+use clap::Parser;
+
+use crate::db::EnvelopeDb;
+use crate::{err, ops};
 
 /// Add environment variables to a specific environment
 #[derive(Parser)]
@@ -17,7 +18,8 @@ pub struct Cmd {
     #[arg(short, long)]
     stdin: bool,
 
-    /// Value of the environment variable. Default to empty string if not provided.
+    /// Value of the environment variable. Default to empty string if not
+    /// provided.
     value: Option<String>,
 }
 

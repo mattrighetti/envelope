@@ -1,4 +1,5 @@
 use std::io::{Result, Write};
+
 use crate::db::{EnvelopeDb, EnvironmentDiff};
 
 const ANSI_RED: &str = "\x1b[31m";
