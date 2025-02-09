@@ -110,13 +110,33 @@ $ cat .env | envelope import prod
 ```
 
 ### List
-List env variables of a particular enviroment
+List environment variables of a particular environment.
 ```console
 $ envelope list dev
 API_KEY=your_api_key
 ...
 SMTP_HOST=smtp.example.com
 ```
+
+You can also specify the sorting order of the output using the `--sort` option. The available sorting options are:
+
+- `key` or `k`: Sort by key in ascending order.
+- `value` or `v`: Sort by value in ascending order.
+- `date` or `d`: Sort by creation date in ascending order.
+- `kd`: Sort by key in descending order.
+- `vd`: Sort by value in descending order.
+- `dd`: Sort by creation date in descending order (default).
+
+For example, to list the environment variables in descending order by their keys:
+
+```console
+$ envelope list dev --sort kd
+SMTP_HOST=smtp.example.com
+...
+API_KEY=your_api_key
+```
+
+If no `--sort` option is provided, the default sorting is by creation date (`da`).
 
 ### Export
 Export environment variables to a .env file in current directory
