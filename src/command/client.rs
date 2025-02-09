@@ -10,7 +10,6 @@ mod diff;
 mod drop;
 mod duplicate;
 mod edit;
-mod export;
 mod history;
 mod import;
 mod list;
@@ -31,8 +30,6 @@ pub enum EnvelopeCmd {
     Duplicate(duplicate::Cmd),
 
     Diff(diff::Cmd),
-
-    Export(export::Cmd),
 
     Edit(edit::Cmd),
 
@@ -61,7 +58,6 @@ impl EnvelopeCmd {
             Self::Drop(drop) => drop.run(&db).await?,
             Self::Duplicate(duplicate) => duplicate.run(&db).await?,
             Self::Diff(diff) => diff.run(&db).await?,
-            Self::Export(export) => export.run(&db).await?,
             Self::Edit(edit) => edit.run(&db).await?,
             Self::Import(import) => import.run(&db).await?,
             Self::History(history) => history.run(&db).await?,
