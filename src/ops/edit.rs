@@ -39,7 +39,7 @@ fn parse(bufr: BufReader<&[u8]>) -> EditorData {
 
 pub async fn edit(db: &EnvelopeDb, env: &str) -> Result<()> {
     let mut kv_list = Vec::new();
-    let envs: Vec<EnvironmentRow> = db.list_kv_in_env_alt(env, Truncate::None).await?;
+    let envs: Vec<EnvironmentRow> = db.list_kv_in_env_alt(env, Truncate::None, "da").await?;
     for env in envs {
         writeln!(&mut kv_list, "{}={}", &env.key, &env.value)?;
     }
