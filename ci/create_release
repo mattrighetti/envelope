@@ -6,6 +6,8 @@ URL="https://github.com/mattrighetti/envelope/blob/master/CHANGELOG.md"
 TAG="$(git tag --points-at HEAD)"
 REF="${TAG//./}---$(git show -s --format=%cd --date=short)"
 CHANGELOG_REF="${URL}#${REF}"
-NOTES="[CHANGELOG](${CHANGELOG_REF})"
+# Extract the first block of text between ---, skipping the line immediately after ---
+CHANGELOG_NOTES=$(awk '/^- - -/{flag++; next} flag==1 && !skip {skip=1; next} flag==1' CHANGELOG.md)
+NOTES="${CHANGELOG_NOTES}\n\n[CHANGELOG](${CHANGELOG_REF})"
 
 gh release create $1 --notes="${NOTES}"
