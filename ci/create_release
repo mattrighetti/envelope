@@ -8,6 +8,10 @@ REF="${TAG//./}---$(git show -s --format=%cd --date=short)"
 CHANGELOG_REF="${URL}#${REF}"
 # Extract the first block of text between ---, skipping the line immediately after ---
 CHANGELOG_NOTES=$(awk '/^- - -/{flag++; next} flag==1 && !skip {skip=1; next} flag==1' CHANGELOG.md)
-NOTES="${CHANGELOG_NOTES}\n\n[CHANGELOG](${CHANGELOG_REF})"
+NOTES=$(cat <<EOF
+${CHANGELOG_NOTES}
+
+[CHANGELOG](${CHANGELOG_REF})
+EOF)
 
 gh release create $1 --notes="${NOTES}"
