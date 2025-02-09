@@ -12,10 +12,13 @@ Commands:
   delete     Delete environment variables
   drop       Drop environment
   duplicate  Create a copy of another environment
+  diff       Diff two existing environments
   edit       Edit environment variables in editor
+  history    Display the historical values of a specific key in a given environment
   init       Initialize envelope
   import     Import environment variables
   list       List saved environments and/or their variables
+  revert     Revert environment variable
   help       Print this message or the help of the given subcommand(s)
 
 Options:

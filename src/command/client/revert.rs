@@ -3,7 +3,7 @@ use std::io::Result;
 
 use crate::{db::EnvelopeDb, ops};
 
-/// Revert environment variable
+/// Revert environment variable to previous value
 #[derive(Parser)]
 pub struct Cmd {
     /// Environment of the key you wish to revert
