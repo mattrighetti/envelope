@@ -293,6 +293,7 @@ impl EnvelopeDb {
         &self,
         env: &str,
         truncate: Truncate,
+        sort: &str,
     ) -> io::Result<Vec<EnvironmentRow>> {
         let max = match truncate {
             Truncate::None => None,
@@ -310,10 +311,24 @@ impl EnvelopeDb {
                 END AS value
             FROM active_envs
             WHERE env = $1
-            ORDER BY created_at",
+            ORDER BY
+                CASE
+                    WHEN $3 = 'ka' THEN key END,
+                CASE
+                    WHEN $3 = 'kd' THEN key END DESC,
+                CASE
+                    WHEN $3 = 'va' THEN value END,
+                CASE
+                    WHEN $3 = 'vd' THEN value END DESC,
+                CASE
+                    WHEN $3 = 'da' THEN created_at END,
+                CASE
+                    WHEN $3 = 'dd' THEN created_at END DESC,
+                created_at ASC",
         )
         .bind(env)
         .bind(max)
+        .bind(sort)
         .fetch_all(&self.db)
         .await
         .map_err(|e| std_err!("db error: {}", e))
@@ -827,7 +842,9 @@ mod tests {
                 EnvironmentRow::from("env1", "KEY3", "value3"),
                 EnvironmentRow::from("env1", "KEY2", "value2"),
             ],
-            db.list_kv_in_env_alt("env1", Truncate::None).await.unwrap()
+            db.list_kv_in_env_alt("env1", Truncate::None, "da")
+                .await
+                .unwrap()
         );
         assert_eq!(
             vec![
@@ -835,7 +852,7 @@ mod tests {
                 EnvironmentRow::from("env1", "KEY3", "val"),
                 EnvironmentRow::from("env1", "KEY2", "val"),
             ],
-            db.list_kv_in_env_alt("env1", Truncate::Max(3))
+            db.list_kv_in_env_alt("env1", Truncate::Max(3), "da")
                 .await
                 .unwrap()
         );
@@ -845,7 +862,7 @@ mod tests {
                 EnvironmentRow::from("env1", "KEY3", "value3"),
                 EnvironmentRow::from("env1", "KEY2", "value2"),
             ],
-            db.list_kv_in_env_alt("env1", Truncate::Max(7))
+            db.list_kv_in_env_alt("env1", Truncate::Max(7), "da")
                 .await
                 .unwrap()
         );
@@ -855,9 +872,105 @@ mod tests {
                 EnvironmentRow::from("env1", "KEY3", ""),
                 EnvironmentRow::from("env1", "KEY2", ""),
             ],
-            db.list_kv_in_env_alt("env1", Truncate::Max(0))
+            db.list_kv_in_env_alt("env1", Truncate::Max(0), "da")
                 .await
                 .unwrap()
+        );
+    }
+
+    #[tokio::test]
+    async fn test_list_ordering() {
+        let db = test_db().await;
+
+        db.exec(
+            r"INSERT INTO environments (env, key, value, created_at)
+            VALUES
+                ('env1', 'KEY1', 'value1', 0),
+                ('env1', 'KEY2', 'value2', 100),
+                ('env1', 'KEY3', 'value3', 10),
+                ('env1', 'KEY4', 'value4', 1000)
+            ",
+        )
+        .await
+        .unwrap();
+
+        assert_eq!(
+            vec![
+                EnvironmentRow::from("env1", "KEY1", "value1"),
+                EnvironmentRow::from("env1", "KEY2", "value2"),
+                EnvironmentRow::from("env1", "KEY3", "value3"),
+                EnvironmentRow::from("env1", "KEY4", "value4"),
+            ],
+            db.list_kv_in_env_alt("env1", Truncate::None, "ka")
+                .await
+                .unwrap()
+        );
+        assert_eq!(
+            vec![
+                EnvironmentRow::from("env1", "KEY4", "value4"),
+                EnvironmentRow::from("env1", "KEY3", "value3"),
+                EnvironmentRow::from("env1", "KEY2", "value2"),
+                EnvironmentRow::from("env1", "KEY1", "value1"),
+            ],
+            db.list_kv_in_env_alt("env1", Truncate::None, "kd")
+                .await
+                .unwrap()
+        );
+        assert_eq!(
+            vec![
+                EnvironmentRow::from("env1", "KEY1", "value1"),
+                EnvironmentRow::from("env1", "KEY3", "value3"),
+                EnvironmentRow::from("env1", "KEY2", "value2"),
+                EnvironmentRow::from("env1", "KEY4", "value4"),
+            ],
+            db.list_kv_in_env_alt("env1", Truncate::None, "da")
+                .await
+                .unwrap()
+        );
+        assert_eq!(
+            vec![
+                EnvironmentRow::from("env1", "KEY4", "value4"),
+                EnvironmentRow::from("env1", "KEY2", "value2"),
+                EnvironmentRow::from("env1", "KEY3", "value3"),
+                EnvironmentRow::from("env1", "KEY1", "value1"),
+            ],
+            db.list_kv_in_env_alt("env1", Truncate::None, "dd")
+                .await
+                .unwrap()
+        );
+        assert_eq!(
+            vec![
+                EnvironmentRow::from("env1", "KEY1", "value1"),
+                EnvironmentRow::from("env1", "KEY2", "value2"),
+                EnvironmentRow::from("env1", "KEY3", "value3"),
+                EnvironmentRow::from("env1", "KEY4", "value4"),
+            ],
+            db.list_kv_in_env_alt("env1", Truncate::None, "va")
+                .await
+                .unwrap()
+        );
+        assert_eq!(
+            vec![
+                EnvironmentRow::from("env1", "KEY4", "value4"),
+                EnvironmentRow::from("env1", "KEY3", "value3"),
+                EnvironmentRow::from("env1", "KEY2", "value2"),
+                EnvironmentRow::from("env1", "KEY1", "value1"),
+            ],
+            db.list_kv_in_env_alt("env1", Truncate::None, "vd")
+                .await
+                .unwrap()
+        );
+        assert_eq!(
+            vec![
+                EnvironmentRow::from("env1", "KEY1", "value1"),
+                EnvironmentRow::from("env1", "KEY3", "value3"),
+                EnvironmentRow::from("env1", "KEY2", "value2"),
+                EnvironmentRow::from("env1", "KEY4", "value4"),
+            ],
+            db.list_kv_in_env_alt("env1", Truncate::None, "invalidsort")
+                .await
+                .unwrap(),
+            "when sort key is invalid it should fallback to ordering by created_at desc"
         );
     }
 
