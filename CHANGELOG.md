@@ -2,6 +2,23 @@
 All notable changes to this project will be documented in this file. See [conventional commits](https://www.conventionalcommits.org/) for commit guidelines.
 
 - - -
+## 0.5.0 - 2025-02-09
+#### Features
+- add sorting arg to list command (#42) - (b1d2968) - Mattia Righetti
+- add history command (#40) - (716df41) - Mattia Righetti
+- add revert command (#38) - (90fe467) - Mattia Righetti
+#### Miscellaneous Chores
+- update create_release script to include latest changelog - (acd00e5) - Mattia Righetti
+- bump sqlx (#30) - (a76c75a) - Mattia Righetti
+- update man page with latest commands - (bcccf8e) - Mattia Righetti
+- update readme and better diff cmd docs - (ae8097e) - Mattia Righetti
+- add history rustdocs - (a4b4d8c) - Mattia Righetti
+- update readme - (1ff91c1) - Mattia Righetti
+#### Refactoring
+- remove export command (#43) - (c31635a) - Mattia Righetti
+
+- - -
+
 ## 0.4.0 - 2025-02-08
 #### Features
 - add diff command (#34) - (dd9945c) - Mattia Righetti
