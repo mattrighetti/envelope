@@ -12,7 +12,6 @@ Commands:
   delete     Delete environment variables
   drop       Drop environment
   duplicate  Create a copy of another environment
-  export     Export environment variables
   edit       Edit environment variables in editor
   init       Initialize envelope
   import     Import environment variables
@@ -137,23 +136,6 @@ API_KEY=your_api_key
 ```
 
 If no `--sort` option is provided, the default sorting is by creation date (`da`).
-
-### Export
-Export environment variables to a .env file in current directory
-```console
-$ envelope export prod
-```
-This will create a .env file containing all the variables that you have stored
-in your `prod` enviroment in envelope.
-
-This makes it easy to switch between different .env configurations, need to use the
-prod envs? Just run `envelope export prod`, want to switch to your dev ones? Run
-`envelope export dev` and everything will be handled for you, for free.
-
-You can also output to a specific file with the `-o` flag:
-```console
-$ envelope export prod -o .env.prod
-```
 
 ### Add
 Add env variables to an environment
