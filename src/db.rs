@@ -273,18 +273,10 @@ impl EnvelopeDb {
         Ok(())
     }
 
+    #[cfg(test)]
     /// lists all active variables in an environment
     pub async fn list_kv_in_env(&self, env: &str) -> io::Result<Vec<EnvironmentRow>> {
-        sqlx::query_as(
-            r"SELECT *
-            FROM active_envs
-            WHERE env = $1
-            ORDER BY created_at",
-        )
-        .bind(env)
-        .fetch_all(&self.db)
-        .await
-        .map_err(|e| std_err!("db error: {}", e))
+        self.list_kv_in_env_alt(env, Truncate::None, "da").await
     }
 
     /// list all key-value for specified environment, this also takes an option
