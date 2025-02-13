@@ -50,7 +50,7 @@ pub struct Cmd {
     truncate: bool,
 
     /// How envelope should sort result
-    #[arg(long, short, default_value = "da")]
+    #[arg(long, short, default_value = "d")]
     sort: Sort,
 }
 
