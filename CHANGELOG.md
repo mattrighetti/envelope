@@ -2,6 +2,15 @@
 All notable changes to this project will be documented in this file. See [conventional commits](https://www.conventionalcommits.org/) for commit guidelines.
 
 - - -
+## 0.5.1 - 2025-02-13
+#### Bug Fixes
+- default value for list cmd - (a8c7f07) - Mattia Righetti
+#### Miscellaneous Chores
+- fix rustfmt and fmt --all - (be97f1c) - Mattia Righetti
+- fix create_release notes - (d133fad) - Mattia Righetti
+
+- - -
+
 ## 0.5.0 - 2025-02-09
 #### Features
 - add sorting arg to list command (#42) - (b1d2968) - Mattia Righetti
