@@ -66,9 +66,11 @@ mod test {
         .await
         .unwrap();
 
-        std::env::set_var("ENVELOPE_TEST_MA_A", "X");
-        std::env::set_var("ENVELOPE_TEST_MA_B", "Y");
-        std::env::set_var("ENVELOPE_TEST_MA_C", "Z");
+        unsafe {
+            std::env::set_var("ENVELOPE_TEST_MA_A", "X");
+            std::env::set_var("ENVELOPE_TEST_MA_B", "Y");
+            std::env::set_var("ENVELOPE_TEST_MA_C", "Z");
+        }
 
         let res = check_active_envs(&db).await;
         assert!(res.is_ok());
@@ -94,8 +96,10 @@ mod test {
         .await
         .unwrap();
 
-        std::env::set_var("ENVELOPE_TEST_NA_A", "X");
-        std::env::set_var("ENVELOPE_TEST_NA_C", "Z");
+        unsafe {
+            std::env::set_var("ENVELOPE_TEST_NA_A", "X");
+            std::env::set_var("ENVELOPE_TEST_NA_C", "Z");
+        }
 
         let res = check_active_envs(&db).await;
         assert!(res.is_ok());
@@ -121,8 +125,10 @@ mod test {
         .await
         .unwrap();
 
-        std::env::set_var("ENVELOPE_TEST_KPDV_D", "X");
-        std::env::set_var("ENVELOPE_TEST_KPDV_E", "K");
+        unsafe {
+            std::env::set_var("ENVELOPE_TEST_KPDV_D", "X");
+            std::env::set_var("ENVELOPE_TEST_KPDV_E", "K");
+        }
 
         let res = check_active_envs(&db).await;
         assert!(res.is_ok());
@@ -148,8 +154,10 @@ mod test {
         .await
         .unwrap();
 
-        std::env::set_var("ENVELOPE_TEST_OP_D", "A");
-        std::env::set_var("ENVELOPE_TEST_OP_E", "K");
+        unsafe {
+            std::env::set_var("ENVELOPE_TEST_OP_D", "A");
+            std::env::set_var("ENVELOPE_TEST_OP_E", "K");
+        }
 
         let res = check_active_envs(&db).await;
         assert!(res.is_ok());

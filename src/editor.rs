@@ -36,7 +36,7 @@ pub fn spawn_with(data: &[u8]) -> Result<Vec<u8>> {
             .open(&pb)?;
 
         file.write_all(data)?;
-        file.write(b"\n\n# Comment variables to remove them")?;
+        file.write_all(b"\n\n# Comment variables to remove them")?;
     }
 
     let args = &[pb.to_str().unwrap()];
