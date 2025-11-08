@@ -46,7 +46,7 @@ impl From<EnvRows> for Table {
 }
 
 pub async fn table_list(db: &EnvelopeDb, env: &str, truncate: Truncate, sort: &str) -> Result<()> {
-    db.env_exists(&env)
+    db.env_exists(env)
         .await
         .map_err(|_| std_err!("env {} does not exist", env))?;
 
@@ -64,7 +64,7 @@ pub async fn list_raw<W: Write>(
     env: &str,
     sort: &str,
 ) -> Result<()> {
-    db.env_exists(&env)
+    db.env_exists(env)
         .await
         .map_err(|_| std_err!("env {} does not exist", env))?;
 

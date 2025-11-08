@@ -81,7 +81,7 @@ mod test {
         let bytes = b"#key1=value1\n#  key2=value2\n\n\n#key3=value3";
         let EditorData { delete, upsert } = parse(BufReader::new(bytes));
         assert_eq!(3, delete.len());
-        for (i, k) in vec!["key1", "key2", "key3"].iter().enumerate() {
+        for (i, k) in ["key1", "key2", "key3"].iter().enumerate() {
             assert_eq!(&delete[i], k);
         }
         assert!(upsert.is_empty());

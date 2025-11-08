@@ -8,16 +8,16 @@ use crate::subproc::ChildProcess;
 fn editor_cmd() -> String {
     let editor = "vim";
 
-    if let Some(e) = std::env::var_os("ENVELOPE_EDITOR") {
-        if let Some(e) = e.to_str() {
-            return e.to_string();
-        }
+    if let Some(e) = std::env::var_os("ENVELOPE_EDITOR")
+        && let Some(e) = e.to_str()
+    {
+        return e.to_string();
     }
 
-    if let Some(e) = std::env::var_os("GIT_EDITOR") {
-        if let Some(e) = e.to_str() {
-            return e.to_string();
-        }
+    if let Some(e) = std::env::var_os("GIT_EDITOR")
+        && let Some(e) = e.to_str()
+    {
+        return e.to_string();
     }
 
     editor.to_string()
@@ -36,7 +36,7 @@ pub fn spawn_with(data: &[u8]) -> Result<Vec<u8>> {
             .open(&pb)?;
 
         file.write_all(data)?;
-        file.write(b"\n\n# Comment variables to remove them")?;
+        file.write_all(b"\n\n# Comment variables to remove them")?;
     }
 
     let args = &[pb.to_str().unwrap()];

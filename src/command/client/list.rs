@@ -60,13 +60,13 @@ impl Cmd {
             None => ops::list_envs(&mut io::stdout(), db).await?,
             Some(env) => {
                 if !self.pretty_print {
-                    ops::list_raw(&mut io::stdout(), db, env, &self.sort.to_str()).await?;
+                    ops::list_raw(&mut io::stdout(), db, env, self.sort.to_str()).await?;
                 } else {
                     let truncate = match self.truncate {
                         true => db::Truncate::Max(60),
                         false => db::Truncate::None,
                     };
-                    ops::table_list(db, env, truncate, &self.sort.to_str()).await?;
+                    ops::table_list(db, env, truncate, self.sort.to_str()).await?;
                 }
             }
         }
