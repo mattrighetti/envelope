@@ -1,7 +1,7 @@
 use std::io;
 use std::io::{BufRead, Result, Write};
 
-use prettytable::{row, Table};
+use prettytable::{Table, row};
 
 use crate::db::{EnvelopeDb, Environment, EnvironmentRow, Truncate};
 use crate::std_err;
