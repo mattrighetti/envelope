@@ -12,3 +12,8 @@ clap = { version = "4", features = ["derive"] }
 prettytable-rs = "0.10.0"
 tokio = { version = "1", features = ["macros", "rt"] }
 sqlx = { version = "0.8", features = ["sqlite", "runtime-tokio"] }
+argon2 = "0.5.3"
+rand = "0.9.2"
+chacha20poly1305 = "0.10.1"
+zeroize = "1.8.2"
+thiserror = "2.0.17"

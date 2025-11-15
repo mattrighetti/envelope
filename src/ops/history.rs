@@ -1,6 +1,6 @@
 use std::io::{Result, Write};
 
-use crate::db::{EnvelopeDb, EnvironmentRowNullable};
+use crate::db::{EnvelopeDb, model::EnvironmentRowNullable};
 
 pub async fn history<W: Write>(
     writer: &mut W,
