@@ -18,7 +18,9 @@ Commands:
   init       Initialize envelope
   import     Import environment variables
   list       List saved environments and/or their variables
+  lock       Encrypt envelope
   revert     Revert environment variable
+  unlock     Decrypt the envelope
   help       Print this message or the help of the given subcommand(s)
 
 Options:
@@ -172,6 +174,29 @@ Checks which environment is currently active
 $ export $(envelope list dev)
 $ envelope check
 dev
+```
+
+### Lock
+Encrypt the envelope database. You will be prompted for a password and a
+confirmation.
+```console
+$ envelope lock
+Password: ********
+Confirm password: ********
+database locked successfully
+```
+
+> [!NOTE]
+>
+> when the database is locked, all other commands
+> will fail until you run `envelope unlock`.
+
+### Unlock
+Decrypt the envelope database with the password you set when locking it.
+```console
+$ envelope unlock
+Password: ********
+database unlocked successfully
 ```
 
 ### Diff

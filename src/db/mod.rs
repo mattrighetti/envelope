@@ -1,112 +1,11 @@
-use std::{env, io};
+use std::io;
 
-use sqlx::sqlite::SqliteRow;
-use sqlx::{FromRow, Row, SqlitePool};
+use sqlx::SqlitePool;
 
 use crate::{err, std_err};
+use model::*;
 
-pub(crate) type EnvelopeResult<T> = Result<T, Box<dyn std::error::Error>>;
-
-#[derive(Debug, Clone, PartialEq, Eq, sqlx::FromRow)]
-pub struct Environment {
-    pub env: String,
-}
-
-#[cfg(test)]
-impl Environment {
-    fn from(e: &str) -> Self {
-        Self { env: e.to_owned() }
-    }
-}
-
-#[derive(Debug, Clone, PartialEq, Eq, sqlx::FromRow)]
-pub struct EnvironmentRow {
-    pub env: String,
-    pub key: String,
-    pub value: String,
-}
-
-#[cfg(test)]
-impl EnvironmentRow {
-    fn from(e: &str, k: &str, v: &str) -> Self {
-        Self {
-            env: e.to_owned(),
-            key: k.to_owned(),
-            value: v.to_owned(),
-        }
-    }
-}
-
-#[derive(Debug, Clone, PartialEq, Eq, sqlx::FromRow)]
-pub struct EnvironmentRowNullable {
-    pub env: String,
-    pub key: String,
-    pub value: Option<String>,
-    pub created_at: String,
-}
-
-#[cfg(test)]
-impl EnvironmentRowNullable {
-    fn from(e: &str, k: &str, v: Option<&str>, date: &str) -> Self {
-        Self {
-            env: e.to_owned(),
-            key: k.to_owned(),
-            value: v.map(|x| x.to_owned()),
-            created_at: date.to_owned(),
-        }
-    }
-}
-
-#[derive(Debug, PartialEq, Eq)]
-pub enum EnvironmentDiff {
-    InFirst(String, String),
-    InSecond(String, String),
-    Different(String, String, String),
-}
-
-impl FromRow<'_, SqliteRow> for EnvironmentDiff {
-    fn from_row(row: &SqliteRow) -> sqlx::Result<Self> {
-        let (key, value) = (
-            row.try_get::<String, _>("key")?,
-            row.try_get::<String, _>("value")?,
-        );
-
-        let val = match row.try_get::<String, _>("type")?.as_str() {
-            "+" => Self::InFirst(key, value),
-            "-" => Self::InSecond(key, value),
-            "/" => Self::Different(key, value, row.try_get("diff")?),
-            _ => panic!("unknown value"),
-        };
-
-        Ok(val)
-    }
-}
-
-pub fn is_present() -> bool {
-    if let Ok(current_dir) = env::current_dir() {
-        let envelope_fs = current_dir.join(".envelope");
-        return envelope_fs.is_file();
-    }
-
-    false
-}
-
-/// Checks if an `.envelope` file is present in the current directory,
-/// if it is nothing is done and an error in returned, otherwise a new envelope
-/// database will get created
-pub async fn init() -> EnvelopeResult<SqlitePool> {
-    let envelope_fs = env::current_dir()?.join(".envelope");
-    let db_path = envelope_fs.into_os_string().into_string().unwrap();
-    let pool = sqlx::sqlite::SqlitePoolOptions::new()
-        .max_connections(1)
-        .connect(&format!("sqlite://{}?mode=rwc", db_path))
-        .await
-        .map_err(|err| format!("{}\nfile: {}", err, db_path))?;
-
-    sqlx::migrate!("./migrations").run(&pool).await?;
-
-    Ok(pool)
-}
+pub(crate) mod model;
 
 #[derive(Debug)]
 pub struct EnvelopeDb {
@@ -121,30 +20,14 @@ pub enum Truncate {
 
 #[cfg(test)]
 impl EnvelopeDb {
-    pub(crate) fn with(pool: SqlitePool) -> Self {
-        EnvelopeDb { db: pool }
-    }
-
     pub fn get_pool(&self) -> &SqlitePool {
         &self.db
     }
 }
 
 impl EnvelopeDb {
-    /// initializes envelope database
-    pub async fn init() -> EnvelopeResult<Self> {
-        let db = init().await?;
-
-        Ok(EnvelopeDb { db })
-    }
-
-    /// loads envelope database from current dir
-    pub async fn load(init: bool) -> EnvelopeResult<Self> {
-        if !is_present() && !init {
-            return Err("envelope is not initialized in current directory".into());
-        }
-
-        EnvelopeDb::init().await
+    pub(crate) fn with(db: SqlitePool) -> Self {
+        EnvelopeDb { db }
     }
 
     /// checks if an environment exists in the database
