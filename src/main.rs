@@ -1,9 +1,12 @@
 mod command;
+mod core;
 mod db;
 mod editor;
 mod error;
 mod ops;
 mod subproc;
+mod utils;
+
 use std::io::Write;
 
 use clap::Parser;

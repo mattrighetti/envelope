@@ -48,7 +48,7 @@ mod test {
     use std::io::BufReader;
 
     use super::*;
-    use crate::db::{EnvironmentRow, test_db};
+    use crate::db::{model::EnvironmentRow, test_db};
 
     pub fn stdin_input(s: &str) -> BufReader<&[u8]> {
         BufReader::new(s.as_bytes())
