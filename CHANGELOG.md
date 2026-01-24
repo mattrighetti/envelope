@@ -2,6 +2,21 @@
 All notable changes to this project will be documented in this file. See [conventional commits](https://www.conventionalcommits.org/) for commit guidelines.
 
 - - -
+## 0.6.0 - 2026-01-24
+#### Features
+- (**encryption**) lock and unlock command - (57aa743) - Mattia Righetti
+#### Bug Fixes
+- rust std::env unsafe update - (1c0d1b4) - Mattia Righetti
+#### Continuous Integration
+- bump pinned version to 1.91 - (150207b) - Mattia Righetti
+#### Miscellaneous Chores
+- (**ci**) pin rust to 1.93 - (a8a199f) - Mattia Righetti
+- (**dep**) bump rsa to 0.9.10 - (2bd52f7) - Mattia Righetti
+- refactor clippy lints - (64f1253) - Mattia Righetti
+- update deps - (b2a76df) - Mattia Righetti
+
+- - -
+
 ## 0.5.1 - 2025-02-13
 #### Bug Fixes
 - default value for list cmd - (a8c7f07) - Mattia Righetti
