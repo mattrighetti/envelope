@@ -158,7 +158,6 @@ impl EnvelopeDb {
         Ok(())
     }
 
-    #[cfg(test)]
     /// lists all active variables in an environment
     pub async fn list_kv_in_env(&self, env: &str) -> io::Result<Vec<EnvironmentRow>> {
         self.list_kv_in_env_alt(env, Truncate::None, "da").await

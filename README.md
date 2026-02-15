@@ -20,6 +20,7 @@ Commands:
   list       List saved environments and/or their variables
   lock       Encrypt envelope
   revert     Revert environment variable
+  run        Run a command with environment variables from a specific environment
   unlock     Decrypt the envelope
   help       Print this message or the help of the given subcommand(s)
 
@@ -445,6 +446,40 @@ $ envelope revert prod api_key
 > Revert works because envelope keeps a complete history of all changes.
 > You can revert multiple times to go back through the entire history.
 > Use `envelope history` to see all historical values before reverting.
+
+### Run
+Run a command with environment variables from a specific environment
+automatically injected. This avoids the need to manually export variables into
+your shell.
+```console
+$ envelope run dev -- cargo run
+```
+
+You can run any command and its arguments. The -- separator is optional but
+recommended when your command includes its own flags.
+
+If you wish to clear the inherited envs from the parent process, you can use the
+`--isolated` flag and that will make sure only the selected env variables are
+injected in the subprocess.
+
+```console
+$ envelope add prod ENVIRONMENT=prod
+$ envelope run prod env
+PATH=...
+HOME=/Users/matt
+SHELL=/bin/zsh
+ENVIRONMENT=prod
+
+$ envelope run prod --isolated env
+# only PATH is inherited from parent
+PATH=...
+ENVIRONMENT=prod
+```
+
+**Use cases**:
+- Run scripts without polluting your current shell environment.
+- Quickly test different environments against the same command.
+- Use in CI/CD pipelines to wrap execution steps.
 
 ### History
 View the complete history of a variable, including deleted values:
