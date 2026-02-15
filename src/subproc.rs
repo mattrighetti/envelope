@@ -1,25 +1,48 @@
-use std::collections::HashMap;
-use std::io::Result;
 use std::process::{Command, ExitStatus};
 
-#[derive(Debug)]
+use crate::std_err;
+
 pub struct ChildProcess<'a> {
-    cmd: &'a str,
+    command: &'a str,
     args: &'a [&'a str],
-    envs: HashMap<&'a str, &'a str>,
+    env: &'a [(&'a str, &'a str)],
+    isolated: bool,
 }
 
 impl<'a> ChildProcess<'a> {
-    pub fn new(cmd: &'a str, args: &'a [&'a str], envs: &'a [(&'a str, &'a str)]) -> Self {
-        let envs = envs.iter().cloned().collect();
-        ChildProcess { cmd, args, envs }
+    pub fn new(command: &'a str, args: &'a [&'a str], env: &'a [(&'a str, &'a str)]) -> Self {
+        Self {
+            command,
+            args,
+            env,
+            isolated: false,
+        }
     }
 
-    pub fn run_shell_command(&self) -> Result<ExitStatus> {
-        Command::new(self.cmd)
-            .args(self.args)
-            .envs(&self.envs)
-            .spawn()?
-            .wait()
+    pub fn isolated(mut self, yes: bool) -> Self {
+        self.isolated = yes;
+        self
+    }
+
+    pub fn run(&self) -> Result<ExitStatus, Box<dyn std::error::Error>> {
+        let mut cmd = Command::new(self.command);
+
+        if self.isolated {
+            cmd.env_clear();
+            for var in ["PATH", "Path"] {
+                if let Some(value) = std::env::var_os(var) {
+                    cmd.env(var, value);
+                }
+            }
+        }
+
+        cmd.args(self.args.iter().copied());
+        cmd.envs(self.env.iter().copied());
+
+        let mut child = cmd
+            .spawn()
+            .map_err(|e| std_err!("failed to spawn {}: {}", self.command, e))?;
+
+        Ok(child.wait()?)
     }
 }

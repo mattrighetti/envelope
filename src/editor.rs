@@ -41,7 +41,7 @@ pub fn spawn_with(data: &[u8]) -> Result<Vec<u8>> {
 
     let args = &[pb.to_str().unwrap()];
     let cmd = ChildProcess::new(&editor, args, &[]);
-    cmd.run_shell_command()
+    cmd.run()
         .map_err(|e| std_err!("error running child process: {}", e))?;
 
     let mut file = OpenOptions::new().read(true).open(&pb)?;

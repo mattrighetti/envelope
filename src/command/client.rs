@@ -17,6 +17,7 @@ mod history;
 mod import;
 mod list;
 mod revert;
+mod run;
 
 #[derive(Subcommand)]
 #[command(infer_subcommands = true)]
@@ -49,6 +50,8 @@ pub enum EnvelopeCmd {
     Lock,
 
     Revert(revert::Cmd),
+
+    Run(run::Cmd),
 
     /// Decrypt envelope
     Unlock,
@@ -116,6 +119,7 @@ impl EnvelopeCmd {
             Self::History(history) => history.run(db).await,
             Self::List(list) => list.run(db).await,
             Self::Revert(revert) => revert.run(db).await,
+            Self::Run(run) => run.run(db).await,
             Self::Init | Self::Lock | Self::Unlock => unreachable!(),
         }
     }
