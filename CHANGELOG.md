@@ -2,6 +2,15 @@
 All notable changes to this project will be documented in this file. See [conventional commits](https://www.conventionalcommits.org/) for commit guidelines.
 
 - - -
+## 0.7.0 - 2026-02-15
+#### Features
+- run command - (fac18b1) - Mattia Righetti
+#### Miscellaneous Chores
+- (**deps**) bump bytes from 1.10.1 to 1.11.1 - (32f545a) - dependabot[bot]
+- update README - (663f409) - Mattia Righetti
+
+- - -
+
 ## 0.6.0 - 2026-01-24
 #### Features
 - (**encryption**) lock and unlock command - (57aa743) - Mattia Righetti

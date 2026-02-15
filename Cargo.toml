@@ -1,6 +1,6 @@
 [package]
 name = "envelope"
-version = "0.6.0"
+version = "0.7.0"
 license = "MIT or Unlicense"
 edition = "2024"
 authors = ["Mattia Righetti <matt95.righetti@gmail.com>"]
