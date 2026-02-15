@@ -5,7 +5,7 @@ use chacha20poly1305::{
     XChaCha20Poly1305,
     aead::{Aead, KeyInit, Payload},
 };
-use rand::RngCore;
+use rand::Rng;
 use zeroize::Zeroizing;
 
 use crate::std_err;
