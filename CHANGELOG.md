@@ -2,6 +2,16 @@
 All notable changes to this project will be documented in this file. See [conventional commits](https://www.conventionalcommits.org/) for commit guidelines.
 
 - - -
+## 0.7.1 - 2026-02-16
+#### Bug Fixes
+- print help if no argument is provided in TTY env - (dc2b3fa) - Mattia Righetti
+#### Refactoring
+- misc editor refactoring - (cf489c0) - Mattia Righetti
+#### Miscellaneous Chores
+- (**dep**) bump rand and cargo update - (4748e6d) - Mattia Righetti
+
+- - -
+
 ## 0.7.0 - 2026-02-15
 #### Features
 - run command - (fac18b1) - Mattia Righetti
