@@ -1,6 +1,7 @@
 use std::io::{Result, Write};
 
-use crate::db::{EnvelopeDb, model::EnvironmentDiff};
+use crate::db::EnvelopeDb;
+use crate::db::model::EnvironmentDiff;
 
 const ANSI_RED: &str = "\x1b[31m";
 const ANSI_GREEN: &str = "\x1b[32m";

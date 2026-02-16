@@ -1,6 +1,7 @@
 use std::io::{BufRead, BufReader, Result, Write};
 
-use crate::db::{EnvelopeDb, Truncate, model::EnvironmentRow};
+use crate::db::model::EnvironmentRow;
+use crate::db::{EnvelopeDb, Truncate};
 use crate::editor;
 
 pub struct EditorData {

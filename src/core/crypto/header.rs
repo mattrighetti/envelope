@@ -1,5 +1,4 @@
-use std::io::Read;
-use std::io::Write;
+use std::io::{Read, Write};
 
 use zeroize::Zeroize;
 
@@ -9,8 +8,9 @@ pub(crate) const SALT_SIZE: usize = 16;
 pub(crate) const NONCE_SIZE: usize = 24;
 pub(crate) const HEADER_SIZE: usize = MAGIC_NUMBER_LEN + VERSION_LEN + SALT_SIZE + NONCE_SIZE; // 53 bytes
 
-// First 4 bytes are SHA256("envelope")[0..4] to reduce collision risk with other formats.
-// Remaining 8 bytes spell "ENVELOPE" for readability in hex dumps.
+// First 4 bytes are SHA256("envelope")[0..4] to reduce collision risk with
+// other formats. Remaining 8 bytes spell "ENVELOPE" for readability in hex
+// dumps.
 pub(crate) const MAGIC_NUMBER: &[u8; MAGIC_NUMBER_LEN] = b"\x4c\x50\x3c\xa6ENVELOPE";
 pub(crate) const CURRENT_VERSION: u8 = 1;
 

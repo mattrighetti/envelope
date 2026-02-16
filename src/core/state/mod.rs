@@ -1,11 +1,11 @@
 mod locked;
 mod unlocked;
 
-pub use locked::LockedEnvelope;
-pub use unlocked::UnlockedEnvelope;
-
 use std::fs::File;
 use std::io::{Read, Result};
+
+pub use locked::LockedEnvelope;
+pub use unlocked::UnlockedEnvelope;
 
 use crate::core::crypto::header::{EnvelopeFileHeader, HEADER_SIZE, MAGIC_NUMBER};
 use crate::core::envelope_path;
@@ -17,7 +17,8 @@ const SQLITE_MAGIC: &[u8; 16] = b"SQLite format 3\0";
 /// Represents the detected state of the envelope file.
 ///
 /// The envelope can be in one of two states:
-/// - [`Locked`](Self::Locked): Encrypted with XChaCha20-Poly1305, requires password to access
+/// - [`Locked`](Self::Locked): Encrypted with XChaCha20-Poly1305, requires
+///   password to access
 /// - [`Unlocked`](Self::Unlocked): Plain SQLite database, ready for use
 #[derive(Debug)]
 pub enum EnvelopeState {

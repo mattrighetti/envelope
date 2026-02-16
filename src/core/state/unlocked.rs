@@ -16,7 +16,8 @@ pub struct UnlockedEnvelope {
 impl UnlockedEnvelope {
     /// Opens an existing unlocked envelope database.
     ///
-    /// This should only be called after `detect()` returns `DetectedEnvelope::Unlocked`.
+    /// This should only be called after `detect()` returns
+    /// `DetectedEnvelope::Unlocked`.
     pub async fn open() -> Result<Self> {
         let path = envelope_path()?;
         let db_path = path

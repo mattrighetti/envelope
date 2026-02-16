@@ -1,9 +1,9 @@
 use std::io;
 
+use model::*;
 use sqlx::SqlitePool;
 
 use crate::{err, std_err};
-use model::*;
 
 pub(crate) mod model;
 

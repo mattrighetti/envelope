@@ -3,10 +3,8 @@ use std::io::{BufRead, Result, Write};
 
 use prettytable::{Table, row};
 
-use crate::db::{
-    EnvelopeDb, Truncate,
-    model::{Environment, EnvironmentRow},
-};
+use crate::db::model::{Environment, EnvironmentRow};
+use crate::db::{EnvelopeDb, Truncate};
 use crate::std_err;
 
 pub async fn print_from_stdin() -> Result<()> {

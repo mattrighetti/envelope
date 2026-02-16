@@ -2,10 +2,9 @@ use std::io::Result;
 
 use clap::Subcommand;
 
-use crate::core;
 use crate::core::state::{EnvelopeState, UnlockedEnvelope};
 use crate::db::EnvelopeDb;
-use crate::{ops, std_err, utils};
+use crate::{core, ops, std_err, utils};
 
 mod add;
 mod delete;

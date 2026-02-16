@@ -1,15 +1,13 @@
 use std::io::Result;
 
 use argon2::{Argon2, Params};
-use chacha20poly1305::{
-    XChaCha20Poly1305,
-    aead::{Aead, KeyInit, Payload},
-};
+use chacha20poly1305::XChaCha20Poly1305;
+use chacha20poly1305::aead::{Aead, KeyInit, Payload};
+use header::EnvelopeFileHeader;
 use rand::Rng;
 use zeroize::Zeroizing;
 
 use crate::std_err;
-use header::EnvelopeFileHeader;
 
 pub(crate) mod header;
 

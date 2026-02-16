@@ -7,7 +7,8 @@ use crate::core::{envelope_path, envelope_tmp_path};
 
 /// Represents a locked (encrypted) envelope.
 ///
-/// Contains the encrypted ciphertext and header information needed for decryption.
+/// Contains the encrypted ciphertext and header information needed for
+/// decryption.
 #[derive(Debug)]
 pub struct LockedEnvelope {
     header: EnvelopeFileHeader,
@@ -25,7 +26,8 @@ impl LockedEnvelope {
     /// and writes the decrypted SQLite database back to disk using an
     /// atomic write (temp file + rename).
     ///
-    /// Consumes self since the envelope is no longer locked after this operation.
+    /// Consumes self since the envelope is no longer locked after this
+    /// operation.
     pub fn unlock(self, password: &str) -> Result<()> {
         let path = envelope_path()?;
         let plaintext = decrypt(&self.ciphertext, &self.header, password.as_bytes())?;
