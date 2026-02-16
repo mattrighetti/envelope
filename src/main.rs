@@ -7,9 +7,9 @@ mod ops;
 mod subproc;
 mod utils;
 
-use std::io::Write;
+use std::io::{self, IsTerminal, Write};
 
-use clap::Parser;
+use clap::{CommandFactory, Parser};
 use command::EnvelopeCmd;
 
 const VERSION: &str = env!("CARGO_PKG_VERSION");
@@ -36,13 +36,12 @@ struct Envelope {
 impl Envelope {
     #[tokio::main(flavor = "current_thread")]
     async fn run(self) -> std::io::Result<()> {
-        match self.envelope {
-            Some(envelope) => {
-                envelope.run().await?;
-            }
-            None => {
-                ops::print_from_stdin().await?;
-            }
+        if let Some(cmd) = self.envelope {
+            cmd.run().await?
+        } else if !io::stdin().is_terminal() {
+            ops::print_from_stdin().await?
+        } else {
+            Self::command().print_help()?
         }
 
         Ok(())
