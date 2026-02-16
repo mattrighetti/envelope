@@ -1,53 +1,38 @@
-use std::env;
-use std::fs::OpenOptions;
-use std::io::{Read, Result, Write};
+use std::env::{self};
+use std::fs::File;
+use std::io::{Read, Result};
 
 use crate::std_err;
 use crate::subproc::ChildProcess;
 
-fn editor_cmd() -> String {
-    let editor = "vim";
-
-    if let Some(e) = std::env::var_os("ENVELOPE_EDITOR")
-        && let Some(e) = e.to_str()
-    {
-        return e.to_string();
-    }
-
-    if let Some(e) = std::env::var_os("GIT_EDITOR")
-        && let Some(e) = e.to_str()
-    {
-        return e.to_string();
-    }
-
-    editor.to_string()
-}
-
 pub fn spawn_with(data: &[u8]) -> Result<Vec<u8>> {
-    let editor = editor_cmd();
-    let pb = env::current_dir()?.join(".ENVELOPE_EDITMSG");
+    let editor = std::env::var("ENVELOPE_EDITOR")
+        .or_else(|_| std::env::var("GIT_EDITOR"))
+        .unwrap_or_else(|_| String::from("vi"));
 
-    {
-        let mut file = OpenOptions::new()
-            .write(true)
-            .read(true)
-            .create(true)
-            .truncate(true)
-            .open(&pb)?;
+    let Ok(curr_dir) = env::current_dir() else {
+        return Err(std_err!("cannot get current dir"));
+    };
 
-        file.write_all(data)?;
-        file.write_all(b"\n\n# Comment variables to remove them")?;
-    }
+    let pb = curr_dir.join(".ENVELOPE_EDITMSG");
+    let Some(pb_str) = pb.to_str() else {
+        return Err(std_err!("invalid path"));
+    };
 
-    let args = &[pb.to_str().unwrap()];
-    let cmd = ChildProcess::new(&editor, args, &[]);
-    cmd.run()
+    std::fs::write(
+        &pb,
+        [data, b"\n\n# Comment variables to remove them\n"].concat(),
+    )
+    .map_err(|_| std_err!("failed to write edit message"))?;
+
+    let args = &[pb_str];
+    ChildProcess::new(&editor, args, &[])
+        .run()
         .map_err(|e| std_err!("error running child process: {}", e))?;
 
-    let mut file = OpenOptions::new().read(true).open(&pb)?;
-
+    let mut file = File::open(&pb)?;
     let mut buf = Vec::new();
-    file.read_to_end(&mut buf).unwrap();
+    file.read_to_end(&mut buf)?;
 
     std::fs::remove_file(pb)?;
     Ok(buf)
