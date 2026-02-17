@@ -1,5 +1,6 @@
 use std::fs;
-use std::io::Result;
+
+use anyhow::Result;
 
 use crate::core::crypto::decrypt;
 use crate::core::crypto::header::EnvelopeFileHeader;

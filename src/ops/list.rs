@@ -1,11 +1,11 @@
 use std::io;
-use std::io::{BufRead, Result, Write};
+use std::io::{BufRead, Write};
 
+use anyhow::{Result, ensure};
 use prettytable::{Table, row};
 
 use crate::db::model::{Environment, EnvironmentRow};
 use crate::db::{EnvelopeDb, Truncate};
-use crate::std_err;
 
 pub async fn print_from_stdin() -> Result<()> {
     let mut table = Table::new();
@@ -47,9 +47,10 @@ impl From<EnvRows> for Table {
 }
 
 pub async fn table_list(db: &EnvelopeDb, env: &str, truncate: Truncate, sort: &str) -> Result<()> {
-    db.env_exists(env)
-        .await
-        .map_err(|_| std_err!("env {} does not exist", env))?;
+    ensure!(
+        db.env_exists(env).await?,
+        "environment '{env}' does not exist"
+    );
 
     let envs: Vec<EnvironmentRow> = db.list_kv_in_env_alt(env, truncate, sort).await?;
     if !envs.is_empty() {
@@ -65,9 +66,10 @@ pub async fn list_raw<W: Write>(
     env: &str,
     sort: &str,
 ) -> Result<()> {
-    db.env_exists(env)
-        .await
-        .map_err(|_| std_err!("env {} does not exist", env))?;
+    ensure!(
+        db.env_exists(env).await?,
+        "environment '{env}' does not exist"
+    );
 
     let envs: Vec<EnvironmentRow> = db.list_kv_in_env_alt(env, Truncate::None, sort).await?;
     for env in envs {

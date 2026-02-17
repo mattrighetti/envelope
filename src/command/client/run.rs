@@ -1,9 +1,7 @@
-use std::io::Result;
-
+use anyhow::{Context, Result, ensure};
 use clap::Parser;
 
 use crate::db::EnvelopeDb;
-use crate::std_err;
 use crate::subproc::ChildProcess;
 
 #[derive(Parser)]
@@ -22,14 +20,13 @@ pub struct Cmd {
 
 impl Cmd {
     pub async fn run(&self, db: &EnvelopeDb) -> Result<()> {
-        if !db.env_exists(&self.env).await? {
-            return Err(std_err!("env {} does not exist", self.env));
-        }
+        ensure!(
+            db.env_exists(&self.env).await?,
+            "environment '{}' does not exist",
+            self.env
+        );
 
-        let (command, remaining_args) = self
-            .args
-            .split_first()
-            .ok_or_else(|| std_err!("no command provided"))?;
+        let (command, remaining_args) = self.args.split_first().context("no command provided")?;
 
         let env_vars = db.list_kv_in_env(&self.env).await?;
 
@@ -42,7 +39,7 @@ impl Cmd {
         let status = ChildProcess::new(command, &args_refs, &env_refs)
             .isolated(self.isolated)
             .run()
-            .map_err(|_| std_err!("encountered error while executing command."))?;
+            .context("failed to run command")?;
 
         if !status.success() {
             std::process::exit(status.code().unwrap_or(1));

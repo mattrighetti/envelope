@@ -1,13 +1,10 @@
-use std::io::Result;
-
+use anyhow::{Result, ensure};
 use argon2::{Argon2, Params};
 use chacha20poly1305::XChaCha20Poly1305;
 use chacha20poly1305::aead::{Aead, KeyInit, Payload};
 use header::EnvelopeFileHeader;
 use rand::Rng;
 use zeroize::Zeroizing;
-
-use crate::std_err;
 
 pub(crate) mod header;
 
@@ -41,13 +38,13 @@ fn derive_key(password: &[u8], salt: &[u8]) -> Result<Zeroizing<Vec<u8>>> {
         ARGON_PARALLELISM,
         Some(KEY_LEN),
     )
-    .map_err(|e| std_err!("key derivation failed: {}", e))?;
+    .map_err(|e| anyhow::anyhow!("key derivation failed: {e}"))?;
     let argon2 = Argon2::new(argon2::Algorithm::Argon2id, argon2::Version::V0x13, params);
 
     let mut key_bytes = Zeroizing::new(vec![0u8; KEY_LEN]);
     argon2
         .hash_password_into(password, salt, &mut key_bytes)
-        .map_err(|e| std_err!("key derivation failed: {}", e))?;
+        .map_err(|e| anyhow::anyhow!("key derivation failed: {e}"))?;
 
     Ok(key_bytes)
 }
@@ -71,7 +68,7 @@ pub(crate) fn encrypt(
                 aad: &aad,
             },
         )
-        .map_err(|e| std_err!("encryption failed: {}", e))?;
+        .map_err(|e| anyhow::anyhow!("failed to encrypt database: {e}"))?;
 
     Ok(ciphertext)
 }
@@ -81,13 +78,12 @@ pub(crate) fn decrypt(
     header: &EnvelopeFileHeader,
     password: &[u8],
 ) -> Result<Vec<u8>> {
-    if header.version != header::CURRENT_VERSION {
-        return Err(std_err!(
-            "unsupported envelope version: {} (expected {})",
-            header.version,
-            header::CURRENT_VERSION
-        ));
-    }
+    ensure!(
+        header.version == header::CURRENT_VERSION,
+        "unsupported envelope version: {} (expected {})",
+        header.version,
+        header::CURRENT_VERSION
+    );
 
     let key = derive_key(password, &header.argon_salt)?;
     let aead = XChaCha20Poly1305::new(key.as_slice().into());
@@ -100,7 +96,7 @@ pub(crate) fn decrypt(
                 aad: &aad,
             },
         )
-        .map_err(|_| std_err!("decryption failed - wrong password?"))?;
+        .map_err(|_| anyhow::anyhow!("decryption failed, wrong password?"))?;
 
     Ok(decrypted)
 }

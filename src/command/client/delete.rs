@@ -1,5 +1,4 @@
-use std::io::Result;
-
+use anyhow::Result;
 use clap::Parser;
 
 use crate::db::EnvelopeDb;

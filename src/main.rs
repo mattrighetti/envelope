@@ -2,7 +2,6 @@ mod command;
 mod core;
 mod db;
 mod editor;
-mod error;
 mod ops;
 mod subproc;
 mod utils;
@@ -35,7 +34,7 @@ struct Envelope {
 
 impl Envelope {
     #[tokio::main(flavor = "current_thread")]
-    async fn run(self) -> std::io::Result<()> {
+    async fn run(self) -> anyhow::Result<()> {
         if let Some(cmd) = self.envelope {
             cmd.run().await?
         } else if !io::stdin().is_terminal() {
@@ -48,11 +47,9 @@ impl Envelope {
     }
 }
 
-fn main() -> std::io::Result<()> {
+fn main() {
     if let Err(err) = Envelope::parse().run() {
-        writeln!(std::io::stderr(), "error: {}", err)?;
+        _ = writeln!(std::io::stderr(), "error: {err}");
         std::process::exit(1);
     }
-
-    Ok(())
 }

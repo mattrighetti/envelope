@@ -1,10 +1,9 @@
-use std::io::Result;
-
+use anyhow::{Result, bail};
 use clap::Subcommand;
 
 use crate::core::state::{EnvelopeState, UnlockedEnvelope};
 use crate::db::EnvelopeDb;
-use crate::{core, ops, std_err, utils};
+use crate::{core, ops, utils};
 
 mod add;
 mod delete;
@@ -66,7 +65,7 @@ impl EnvelopeCmd {
                 core::init().await?;
                 Ok(())
             }
-            (Self::Init, _) => Err(std_err!("envelope is already initialized")),
+            (Self::Init, _) => bail!("envelope is already initialized"),
 
             // unlock: only valid when locked
             (Self::Unlock, Some(EnvelopeState::Locked(env))) => {
@@ -76,7 +75,7 @@ impl EnvelopeCmd {
                 Ok(())
             }
             (Self::Unlock, Some(EnvelopeState::Unlocked)) => {
-                Err(std_err!("envelope is already unlocked"))
+                bail!("envelope is already unlocked")
             }
 
             // lock: only valid when unlocked
@@ -88,7 +87,7 @@ impl EnvelopeCmd {
                 Ok(())
             }
             (Self::Lock, Some(EnvelopeState::Locked(_))) => {
-                Err(std_err!("envelope is already locked"))
+                bail!("envelope is already locked")
             }
 
             // all other commands: only valid when unlocked
@@ -98,9 +97,9 @@ impl EnvelopeCmd {
             }
 
             // error cases
-            (_, None) => Err(std_err!("envelope is not initialized")),
+            (_, None) => bail!("envelope is not initialized, run `envelope init` first"),
             (_, Some(EnvelopeState::Locked(_))) => {
-                Err(std_err!("envelope is locked - run `envelope unlock` first"))
+                bail!("envelope is locked, run `envelope unlock` first")
             }
         }
     }

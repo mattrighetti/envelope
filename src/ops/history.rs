@@ -1,4 +1,6 @@
-use std::io::{Result, Write};
+use std::io::Write;
+
+use anyhow::Result;
 
 use crate::db::EnvelopeDb;
 use crate::db::model::EnvironmentRowNullable;
@@ -18,9 +20,9 @@ pub async fn history<W: Write>(
     } in kvs
     {
         if let Some(value) = value {
-            writeln!(writer, "{} {}={}", created_at, key, value)?;
+            writeln!(writer, "{created_at} {key}={value}")?;
         } else {
-            writeln!(writer, "{} {} inactive", created_at, key)?;
+            writeln!(writer, "{created_at} {key} inactive")?;
         }
     }
 

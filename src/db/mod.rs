@@ -1,9 +1,6 @@
-use std::io;
-
+use anyhow::{Context, Result, ensure};
 use model::*;
 use sqlx::SqlitePool;
-
-use crate::{err, std_err};
 
 pub(crate) mod model;
 
@@ -31,40 +28,40 @@ impl EnvelopeDb {
     }
 
     /// checks if an environment exists in the database
-    pub async fn env_exists(&self, env: &str) -> io::Result<bool> {
+    pub async fn env_exists(&self, env: &str) -> Result<bool> {
         sqlx::query_scalar(r"SELECT EXISTS(SELECT 1 FROM environments WHERE env = $1)")
             .bind(env)
             .fetch_one(&self.db)
             .await
-            .map_err(|e| std_err!("db error: {}", e))
+            .context("failed to check if environment exists")
     }
 
     /// Returns all active variables stored for all environments
-    pub async fn get_active_kv_in_env(&self) -> io::Result<Vec<EnvironmentRow>> {
+    pub async fn get_active_kv_in_env(&self) -> Result<Vec<EnvironmentRow>> {
         sqlx::query_as(
             r"SELECT *
             FROM active_envs",
         )
         .fetch_all(&self.db)
         .await
-        .map_err(|e| std_err!("db error: {}", e))
+        .context("failed to read environment variables")
     }
 
     /// inserts `key` and `value` to environment `env`
-    pub async fn insert(&self, env: &str, key: &str, var: &str) -> io::Result<()> {
+    pub async fn insert(&self, env: &str, key: &str, var: &str) -> Result<()> {
         sqlx::query(r"INSERT INTO environments (env, key, value) VALUES ($1, upper($2), $3)")
             .bind(env)
             .bind(key)
             .bind(var)
             .execute(&self.db)
             .await
-            .map_err(|e| std_err!("db error: {}", e))?;
+            .context("failed to add variable")?;
 
         Ok(())
     }
 
     /// soft deletes all variables in an environment
-    pub async fn soft_delete_env(&self, env: &str) -> io::Result<()> {
+    pub async fn soft_delete_env(&self, env: &str) -> Result<()> {
         sqlx::query(
             r"INSERT INTO environments (env, key, value)
             SELECT env, key, NULL
@@ -74,13 +71,13 @@ impl EnvelopeDb {
         .bind(env)
         .execute(&self.db)
         .await
-        .map_err(|e| std_err!("db error: {}", e))?;
+        .context("failed to delete environment")?;
 
         Ok(())
     }
 
     /// soft deletes all variables with specified key
-    pub async fn soft_delete_keys(&self, key: &str) -> io::Result<()> {
+    pub async fn soft_delete_keys(&self, key: &str) -> Result<()> {
         sqlx::query(
             r"INSERT INTO environments (env, key, value)
             SELECT env, key, NULL
@@ -90,13 +87,13 @@ impl EnvelopeDb {
         .bind(key)
         .execute(&self.db)
         .await
-        .map_err(|e| std_err!("db error: {}", e))?;
+        .context("failed to delete variable")?;
 
         Ok(())
     }
 
     /// Soft deletes specified variable in passed environment
-    pub async fn soft_delete_key_in_env(&self, env: &str, key: &str) -> io::Result<()> {
+    pub async fn soft_delete_key_in_env(&self, env: &str, key: &str) -> Result<()> {
         sqlx::query(
             r"INSERT INTO environments (env, key, value)
             SELECT env, key, NULL
@@ -109,13 +106,13 @@ impl EnvelopeDb {
         .bind(key)
         .execute(&self.db)
         .await
-        .map_err(|e| std_err!("db error: {}", e))?;
+        .context("failed to delete variable from environment")?;
 
         Ok(())
     }
 
     /// deletes environment from database entirely
-    pub async fn delete_env(&self, env: &str) -> io::Result<()> {
+    pub async fn delete_env(&self, env: &str) -> Result<()> {
         sqlx::query(
             r"DELETE
             FROM environments
@@ -124,24 +121,23 @@ impl EnvelopeDb {
         .bind(env)
         .execute(&self.db)
         .await
-        .map_err(|e| std_err!("db error: {}", e))?;
+        .context("failed to drop environment")?;
 
         Ok(())
     }
 
     /// duplicates `source_env` in a new environment `target_env`.
     /// In order for this to work, `tgt_env` must not be present.
-    pub async fn duplicate_env(&self, source_env: &str, target_env: &str) -> io::Result<()> {
-        if !self.env_exists(source_env).await? {
-            return err!("source environment {} does not exist", source_env);
-        }
+    pub async fn duplicate_env(&self, source_env: &str, target_env: &str) -> Result<()> {
+        ensure!(
+            self.env_exists(source_env).await?,
+            "source environment '{source_env}' does not exist"
+        );
 
-        if self.env_exists(target_env).await? {
-            return err!(
-                "duplicating into existing target environment {} is not allowed",
-                target_env
-            );
-        }
+        ensure!(
+            !self.env_exists(target_env).await?,
+            "target environment '{target_env}' already exists"
+        );
 
         sqlx::query(
             r"INSERT INTO environments (env, key, value)
@@ -153,13 +149,13 @@ impl EnvelopeDb {
         .bind(target_env)
         .execute(&self.db)
         .await
-        .map_err(|e| std_err!("db error: {}", e))?;
+        .context("failed to duplicate environment")?;
 
         Ok(())
     }
 
     /// lists all active variables in an environment
-    pub async fn list_kv_in_env(&self, env: &str) -> io::Result<Vec<EnvironmentRow>> {
+    pub async fn list_kv_in_env(&self, env: &str) -> Result<Vec<EnvironmentRow>> {
         self.list_kv_in_env_alt(env, Truncate::None, "da").await
     }
 
@@ -170,7 +166,7 @@ impl EnvelopeDb {
         env: &str,
         truncate: Truncate,
         sort: &str,
-    ) -> io::Result<Vec<EnvironmentRow>> {
+    ) -> Result<Vec<EnvironmentRow>> {
         let max = match truncate {
             Truncate::None => None,
             Truncate::Max(x) => Some(x),
@@ -207,24 +203,25 @@ impl EnvelopeDb {
         .bind(sort)
         .fetch_all(&self.db)
         .await
-        .map_err(|e| std_err!("db error: {}", e))
+        .context("failed to list variables")
     }
 
     // lists environments present in the database. Environments that only contain
     // deletes variables will be listed as well.
-    pub async fn list_environments(&self) -> io::Result<Vec<Environment>> {
+    pub async fn list_environments(&self) -> Result<Vec<Environment>> {
         sqlx::query_as(r"SELECT DISTINCT env FROM environments ORDER BY created_at")
             .fetch_all(&self.db)
             .await
-            .map_err(|e| std_err!("db error: {}", e))
+            .context("failed to list environments")
     }
 
     /// This returns the diff between the two specified environments
-    pub async fn diff(&self, e1: &str, e2: &str) -> io::Result<Vec<EnvironmentDiff>> {
+    pub async fn diff(&self, e1: &str, e2: &str) -> Result<Vec<EnvironmentDiff>> {
         for e in [e1, e2] {
-            if !self.env_exists(e).await? {
-                return err!("cannot diff non existent environment {}", e);
-            }
+            ensure!(
+                self.env_exists(e).await?,
+                "environment '{e}' does not exist"
+            );
         }
 
         sqlx::query_as(
@@ -263,12 +260,12 @@ impl EnvelopeDb {
         .bind(e2)
         .fetch_all(&self.db)
         .await
-        .map_err(|e| std_err!("db error: {}", e))
+        .context("failed to diff environments")
     }
 
     /// Reverts a specific key-value in a specific env by deleting the most
     /// recent entry in database
-    pub async fn revert(&self, env: &str, key: &str) -> io::Result<()> {
+    pub async fn revert(&self, env: &str, key: &str) -> Result<()> {
         sqlx::query(
             r"DELETE FROM environments
             WHERE
@@ -288,13 +285,13 @@ impl EnvelopeDb {
         .bind(key)
         .execute(&self.db)
         .await
-        .map_err(|e| std_err!("db error: {}", e))?;
+        .context("failed to revert variable")?;
 
         Ok(())
     }
 
     /// Lists all values for an env key pair
-    pub async fn history(&self, env: &str, key: &str) -> io::Result<Vec<EnvironmentRowNullable>> {
+    pub async fn history(&self, env: &str, key: &str) -> Result<Vec<EnvironmentRowNullable>> {
         sqlx::query_as(
             "SELECT env, key, value, CAST(DATETIME(created_at, 'unixepoch') AS text) AS created_at
             FROM environments
@@ -307,15 +304,15 @@ impl EnvelopeDb {
         .bind(key)
         .fetch_all(&self.db)
         .await
-        .map_err(|e| std_err!("db error: {}", e))
+        .context("failed to read variable history")
     }
 
     #[cfg(test)]
-    async fn exec(&self, sql: &str) -> io::Result<()> {
+    async fn exec(&self, sql: &str) -> Result<()> {
         sqlx::query(sql)
             .execute(&self.db)
             .await
-            .map_err(|e| std_err!("db error: {}", e))?;
+            .context("db error")?;
 
         Ok(())
     }
@@ -613,13 +610,31 @@ mod tests {
 
         // Duplicate env1 -> env4
         db.duplicate_env("env1", "env4").await.unwrap();
+
+        let err = db
+            .duplicate_env("env4", "env1")
+            .await
+            .expect_err("cannot duplicate into already present env1");
         assert!(
-            db.duplicate_env("env4", "env1").await.is_err(),
-            "cannot duplicate in already present env1"
+            err.to_string().contains("already exists"),
+            "error should indicate target exists, got: {err}"
         );
         assert!(
-            db.duplicate_env("env5", "env1").await.is_err(),
-            "cannot duplicate from non-existent env5"
+            err.to_string().contains("env1"),
+            "error should mention the target environment name, got: {err}"
+        );
+
+        let err = db
+            .duplicate_env("env5", "env1")
+            .await
+            .expect_err("cannot duplicate from non-existent env5");
+        assert!(
+            err.to_string().contains("does not exist"),
+            "error should indicate source missing, got: {err}"
+        );
+        assert!(
+            err.to_string().contains("env5"),
+            "error should mention the source environment name, got: {err}"
         );
 
         // Query database directly to verify stored values
@@ -926,6 +941,43 @@ mod tests {
                 EnvironmentDiff::Different("NOTMATCH".into(), "value2".into(), "value1".into())
             ],
             db.diff("env2", "env1").await.unwrap()
+        );
+    }
+
+    #[tokio::test]
+    async fn test_diff_nonexistent_env() {
+        let db = test_db().await;
+
+        db.insert("env1", "key1", "value1").await.unwrap();
+
+        // first argument doesn't exist
+        let err = db
+            .diff("ghost", "env1")
+            .await
+            .expect_err("diff with non-existent first env should fail");
+        assert!(
+            err.to_string().contains("ghost"),
+            "error should mention the missing environment name, got: {err}"
+        );
+
+        // second argument doesn't exist
+        let err = db
+            .diff("env1", "ghost")
+            .await
+            .expect_err("diff with non-existent second env should fail");
+        assert!(
+            err.to_string().contains("ghost"),
+            "error should mention the missing environment name, got: {err}"
+        );
+
+        // both don't exist
+        let err = db
+            .diff("nope", "nada")
+            .await
+            .expect_err("diff with two non-existent envs should fail");
+        assert!(
+            err.to_string().contains("does not exist"),
+            "error should indicate environment does not exist, got: {err}"
         );
     }
 

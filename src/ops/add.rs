@@ -1,15 +1,14 @@
-use std::io::{BufRead, Result, Write};
+use std::io::{BufRead, Write};
+
+use anyhow::{Result, ensure};
 
 use crate::db::EnvelopeDb;
-use crate::err;
 
 /// Adds a single key-value element to the database
 ///
 /// If the value of v is None, an empty string is inserted
 pub async fn add_var(db: &EnvelopeDb, env: &str, k: &str, v: &str) -> Result<()> {
-    if k.starts_with('#') {
-        return err!("key name cannot start with #");
-    }
+    ensure!(!k.starts_with('#'), "variable name cannot start with '#'");
 
     db.insert(env, k, v).await?;
 
@@ -29,14 +28,14 @@ pub async fn import<W: Write, R: BufRead>(
 
         let line = line.unwrap();
         if line.starts_with('#') {
-            writeln!(writer, "skipping {}", line)?;
+            writeln!(writer, "skipping {line}")?;
             continue;
         }
 
         if let Some((k, v)) = line.split_once('=') {
             db.insert(env, k, v).await?;
         } else {
-            writeln!(writer, "invalid {}, skipping", line)?;
+            writeln!(writer, "invalid {line}, skipping")?;
         }
     }
 

@@ -1,12 +1,13 @@
 use std::fs::{self, File};
-use std::io::{Result, Write};
+use std::io::Write;
+
+use anyhow::{Context, Result};
 
 use super::LockedEnvelope;
 use crate::core::crypto::encrypt;
 use crate::core::crypto::header::EnvelopeFileHeader;
 use crate::core::{envelope_path, envelope_tmp_path};
 use crate::db::EnvelopeDb;
-use crate::std_err;
 
 /// Represents an unlocked (unencrypted) envelope with database access.
 pub struct UnlockedEnvelope {
@@ -22,11 +23,11 @@ impl UnlockedEnvelope {
         let path = envelope_path()?;
         let db_path = path
             .to_str()
-            .ok_or_else(|| std_err!("invalid path encoding"))?;
+            .context("current directory path contains invalid characters")?;
 
-        let pool = sqlx::sqlite::SqlitePool::connect(&format!("sqlite://{}?mode=rw", db_path))
+        let pool = sqlx::sqlite::SqlitePool::connect(&format!("sqlite://{db_path}?mode=rw"))
             .await
-            .map_err(|e| std_err!("failed to open database: {}", e))?;
+            .context("failed to open .envelope database")?;
 
         Ok(Self {
             db: EnvelopeDb::with(pool),

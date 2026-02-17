@@ -1,4 +1,6 @@
-use std::io::{BufRead, BufReader, Result, Write};
+use std::io::{BufRead, BufReader, Write};
+
+use anyhow::Result;
 
 use crate::db::model::EnvironmentRow;
 use crate::db::{EnvelopeDb, Truncate};

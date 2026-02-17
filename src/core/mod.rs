@@ -2,12 +2,12 @@ pub(crate) mod crypto;
 pub mod state;
 
 use std::env;
-use std::io::Result;
 use std::path::PathBuf;
+
+use anyhow::{Context, Result};
 
 use crate::core::state::UnlockedEnvelope;
 use crate::db::EnvelopeDb;
-use crate::std_err;
 
 const ENVELOPE_FILENAME: &str = ".envelope";
 const ENVELOPE_FILENAME_TMP: &str = ".envelope.tmp";
@@ -30,16 +30,16 @@ pub async fn init() -> Result<UnlockedEnvelope> {
     let path = envelope_path()?;
     let db_path = path
         .to_str()
-        .ok_or_else(|| std_err!("invalid path encoding"))?;
+        .context("current directory path contains invalid characters")?;
 
-    let pool = sqlx::sqlite::SqlitePool::connect(&format!("sqlite://{}?mode=rwc", db_path))
+    let pool = sqlx::sqlite::SqlitePool::connect(&format!("sqlite://{db_path}?mode=rwc"))
         .await
-        .map_err(|e| std_err!("failed to create database: {}", e))?;
+        .context("failed to create .envelope database")?;
 
     sqlx::migrate!("./migrations")
         .run(&pool)
         .await
-        .map_err(|e| std_err!("failed to run migrations: {}", e))?;
+        .context("failed to initialize database schema")?;
 
     Ok(UnlockedEnvelope::with_db(EnvelopeDb::with(pool)))
 }

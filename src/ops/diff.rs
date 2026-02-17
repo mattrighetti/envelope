@@ -1,4 +1,6 @@
-use std::io::{Result, Write};
+use std::io::Write;
+
+use anyhow::Result;
 
 use crate::db::EnvelopeDb;
 use crate::db::model::EnvironmentDiff;
@@ -13,13 +15,13 @@ pub async fn diff<W: Write>(writer: &mut W, db: &EnvelopeDb, env1: &str, env2: &
     for diff in diffs {
         match diff {
             EnvironmentDiff::InFirst(k, v) => {
-                writeln!(writer, "{ANSI_GREEN}+ {}={}{ANSI_DEFAULT}", k, v)?;
+                writeln!(writer, "{ANSI_GREEN}+ {k}={v}{ANSI_DEFAULT}")?;
             }
             EnvironmentDiff::InSecond(k, v) => {
-                writeln!(writer, "{ANSI_RED}- {}={}{ANSI_DEFAULT}", k, v)?;
+                writeln!(writer, "{ANSI_RED}- {k}={v}{ANSI_DEFAULT}")?;
             }
             EnvironmentDiff::Different(k, v1, v2) => {
-                writeln!(writer, "{ANSI_GRAY}/ {}={} -> {}{ANSI_DEFAULT}", k, v1, v2)?;
+                writeln!(writer, "{ANSI_GRAY}/ {k}={v1} -> {v2}{ANSI_DEFAULT}")?;
             }
         }
     }

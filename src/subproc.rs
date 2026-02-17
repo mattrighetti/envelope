@@ -1,6 +1,6 @@
 use std::process::{Command, ExitStatus};
 
-use crate::std_err;
+use anyhow::{Context, Result};
 
 pub struct ChildProcess<'a> {
     command: &'a str,
@@ -24,7 +24,7 @@ impl<'a> ChildProcess<'a> {
         self
     }
 
-    pub fn run(&self) -> Result<ExitStatus, Box<dyn std::error::Error>> {
+    pub fn run(&self) -> Result<ExitStatus> {
         let mut cmd = Command::new(self.command);
 
         if self.isolated {
@@ -41,7 +41,7 @@ impl<'a> ChildProcess<'a> {
 
         let mut child = cmd
             .spawn()
-            .map_err(|e| std_err!("failed to spawn {}: {}", self.command, e))?;
+            .with_context(|| format!("failed to run '{}'", self.command))?;
 
         Ok(child.wait()?)
     }
