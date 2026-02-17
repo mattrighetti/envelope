@@ -2,14 +2,14 @@ mod locked;
 mod unlocked;
 
 use std::fs::File;
-use std::io::{Read, Result};
+use std::io::Read;
 
+use anyhow::{Context, Result, bail};
 pub use locked::LockedEnvelope;
 pub use unlocked::UnlockedEnvelope;
 
 use crate::core::crypto::header::{EnvelopeFileHeader, HEADER_SIZE, MAGIC_NUMBER};
 use crate::core::envelope_path;
-use crate::std_err;
 
 /// sqlite magic number: <https://www.sqlite.org/fileformat.html>
 const SQLITE_MAGIC: &[u8; 16] = b"SQLite format 3\0";
@@ -51,14 +51,14 @@ pub fn detect() -> Result<Option<EnvelopeState>> {
             // valid locked envelope file
             let mut ciphertext = Vec::new();
             file.read_to_end(&mut ciphertext)
-                .map_err(|_| std_err!("error reading locked envelope"))?;
+                .context("failed to read encrypted envelope data")?;
 
             return Ok(Some(EnvelopeState::Locked(LockedEnvelope::new(
                 header, ciphertext,
             ))));
         }
 
-        return Err(std_err!("invalid .envelope file"));
+        bail!("corrupted .envelope file: header is malformed or truncated");
     }
 
     // check for sqlite database
@@ -66,5 +66,5 @@ pub fn detect() -> Result<Option<EnvelopeState>> {
         return Ok(Some(EnvelopeState::Unlocked));
     }
 
-    Err(std_err!("invalid .envelope file"))
+    bail!("unrecognized .envelope file format")
 }

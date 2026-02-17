@@ -1,12 +1,14 @@
 use std::collections::HashSet;
-use std::io::{Result, Write};
+use std::io::Write;
+
+use anyhow::Result;
 
 use crate::db::EnvelopeDb;
 
 pub async fn check<W: Write>(w: &mut W, db: &EnvelopeDb) -> Result<()> {
     let res = check_active_envs(db).await?;
     for env in res {
-        writeln!(w, "{}", env)?;
+        writeln!(w, "{env}")?;
     }
 
     Ok(())

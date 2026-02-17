@@ -1,9 +1,10 @@
-use std::io::{BufRead, Result, Write};
+use std::io::{BufRead, Write};
 
+use anyhow::{Result, bail};
 use clap::Parser;
 
 use crate::db::EnvelopeDb;
-use crate::{err, ops};
+use crate::ops;
 
 /// Add environment variables to a specific environment
 #[derive(Parser)]
@@ -26,7 +27,7 @@ pub struct Cmd {
 impl Cmd {
     pub async fn run(&self, db: &EnvelopeDb) -> Result<()> {
         if self.stdin && self.value.is_some() {
-            return err!("can't specify a value if you're reading from stdin");
+            bail!("cannot specify both a value argument and --stdin");
         }
 
         let mut value = String::new();

@@ -1,8 +1,5 @@
-use std::io::Result;
-
+use anyhow::{Context, Result, ensure};
 use zeroize::Zeroizing;
-
-use crate::std_err;
 
 /// Prompts for password input.
 ///
@@ -11,7 +8,7 @@ use crate::std_err;
 pub(crate) fn prompt_password(prompt: &str) -> Result<Zeroizing<String>> {
     rpassword::prompt_password(prompt)
         .map(Zeroizing::new)
-        .map_err(|e| std_err!("failed to read password: {}", e))
+        .context("failed to read password")
 }
 
 /// Prompts for password with confirmation, returns error if they don't match.
@@ -21,15 +18,11 @@ pub(crate) fn prompt_password(prompt: &str) -> Result<Zeroizing<String>> {
 pub(crate) fn prompt_password_confirm() -> Result<Zeroizing<String>> {
     let password = prompt_password("Password: ")?;
 
-    if password.is_empty() {
-        return Err(std_err!("password cannot be empty"));
-    }
+    ensure!(!password.is_empty(), "password cannot be empty");
 
     let confirm = prompt_password("Confirm password: ")?;
 
-    if *password != *confirm {
-        return Err(std_err!("passwords do not match"));
-    }
+    ensure!(*password == *confirm, "passwords do not match");
 
     Ok(password)
 }

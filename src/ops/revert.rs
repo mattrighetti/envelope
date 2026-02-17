@@ -1,4 +1,4 @@
-use std::io::Result;
+use anyhow::Result;
 
 use crate::db::EnvelopeDb;
 

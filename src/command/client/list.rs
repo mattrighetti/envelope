@@ -1,6 +1,4 @@
-use std::io;
-use std::io::Result;
-
+use anyhow::Result;
 use clap::Parser;
 
 use crate::db::{self, EnvelopeDb};
@@ -57,10 +55,10 @@ pub struct Cmd {
 impl Cmd {
     pub async fn run(&self, db: &EnvelopeDb) -> Result<()> {
         match &self.env {
-            None => ops::list_envs(&mut io::stdout(), db).await?,
+            None => ops::list_envs(&mut std::io::stdout(), db).await?,
             Some(env) => {
                 if !self.pretty_print {
-                    ops::list_raw(&mut io::stdout(), db, env, self.sort.to_str()).await?;
+                    ops::list_raw(&mut std::io::stdout(), db, env, self.sort.to_str()).await?;
                 } else {
                     let truncate = match self.truncate {
                         true => db::Truncate::Max(60),

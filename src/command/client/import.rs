@@ -1,7 +1,7 @@
 use std::fs::File;
-use std::io;
-use std::io::{BufRead, BufReader, Result};
+use std::io::{BufRead, BufReader};
 
+use anyhow::Result;
 use clap::Parser;
 
 use crate::db::EnvelopeDb;
@@ -22,14 +22,14 @@ pub struct Cmd {
 impl Cmd {
     pub async fn run(&self, db: &EnvelopeDb) -> Result<()> {
         let reader: Box<dyn BufRead> = match &self.path {
-            None => Box::new(BufReader::new(io::stdin())),
+            None => Box::new(BufReader::new(std::io::stdin())),
             Some(path) => {
                 let f = File::open(path)?;
                 Box::new(BufReader::new(f))
             }
         };
 
-        ops::import(reader, &mut io::stdout(), db, &self.env).await?;
+        ops::import(reader, &mut std::io::stdout(), db, &self.env).await?;
 
         Ok(())
     }
