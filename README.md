@@ -46,9 +46,7 @@ binary to a folder in your `$PATH`
 You can install envelope with cargo, make sure that your `~/.cargo` folder is in
 your `$PATH`
 ```console
-$ git clone https://github.com/mattrighetti/envelope
-$ cd envelope
-$ cargo install --path .
+$ cargo install --git https://github.com/mattrighetti/envelope
 $ envelope --version
 envelope 0.3.11
 ```
