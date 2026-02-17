@@ -46,13 +46,14 @@ async fn check_active_envs(db: &EnvelopeDb) -> Result<HashSet<String>> {
 
 #[cfg(test)]
 mod test {
-    use super::*;
-    use crate::db::test_db;
+    use sqlx::SqlitePool;
 
-    #[tokio::test]
-    async fn test_check_multiple_active_subset() {
-        let db = test_db().await;
-        let pool = db.get_pool();
+    use super::*;
+    use crate::db::EnvelopeDb;
+
+    #[sqlx::test]
+    async fn test_check_multiple_active_subset(pool: SqlitePool) {
+        let db = EnvelopeDb::with(pool.clone());
 
         sqlx::query(
             r"INSERT INTO environments (env, key, value)
@@ -64,7 +65,7 @@ mod test {
             ('test', 'ENVELOPE_TEST_MA_D', 'Z'),
             ('test', 'ENVELOPE_TEST_MA_E', 'K');",
         )
-        .execute(pool)
+        .execute(&pool)
         .await
         .unwrap();
 
@@ -79,10 +80,9 @@ mod test {
         assert_eq!(HashSet::from(["dev".into(), "loc".into()]), res.unwrap());
     }
 
-    #[tokio::test]
-    async fn test_check_none_active() {
-        let db = test_db().await;
-        let pool = db.get_pool();
+    #[sqlx::test]
+    async fn test_check_none_active(pool: SqlitePool) {
+        let db = EnvelopeDb::with(pool.clone());
 
         sqlx::query(
             r"INSERT INTO environments (env, key, value)
@@ -94,7 +94,7 @@ mod test {
             ('test', 'ENVELOPE_TEST_NA_D', 'Z'),
             ('test', 'ENVELOPE_TEST_NA_E', 'K');",
         )
-        .execute(pool)
+        .execute(&pool)
         .await
         .unwrap();
 
@@ -108,10 +108,9 @@ mod test {
         assert!(res.unwrap().is_empty());
     }
 
-    #[tokio::test]
-    async fn test_check_key_present_diff_value() {
-        let db = test_db().await;
-        let pool = db.get_pool();
+    #[sqlx::test]
+    async fn test_check_key_present_diff_value(pool: SqlitePool) {
+        let db = EnvelopeDb::with(pool.clone());
 
         sqlx::query(
             r"INSERT INTO environments (env, key, value)
@@ -123,7 +122,7 @@ mod test {
             ('test', 'ENVELOPE_TEST_KPDV_D', 'A'),
             ('test', 'ENVELOPE_TEST_KPDV_E', 'K');",
         )
-        .execute(pool)
+        .execute(&pool)
         .await
         .unwrap();
 
@@ -137,10 +136,9 @@ mod test {
         assert!(res.unwrap().is_empty());
     }
 
-    #[tokio::test]
-    async fn test_check_one_active() {
-        let db = test_db().await;
-        let pool = db.get_pool();
+    #[sqlx::test]
+    async fn test_check_one_active(pool: SqlitePool) {
+        let db = EnvelopeDb::with(pool.clone());
 
         sqlx::query(
             r"INSERT INTO environments (env, key, value)
@@ -152,7 +150,7 @@ mod test {
             ('test', 'ENVELOPE_TEST_OP_D', 'A'),
             ('test', 'ENVELOPE_TEST_OP_E', 'K');",
         )
-        .execute(pool)
+        .execute(&pool)
         .await
         .unwrap();
 

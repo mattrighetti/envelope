@@ -15,7 +15,7 @@ clap = { version = "4", features = ["derive"] }
 prettytable-rs = "0.10.0"
 rand = "0.10.0"
 rpassword = "7.4.0"
-sqlx = { version = "0.8", features = ["sqlite", "runtime-tokio"] }
+sqlx = { version = "0.8", features = ["sqlite", "runtime-tokio", "macros"] }
 thiserror = "2.0.17"
 tokio = { version = "1", features = ["macros", "rt"] }
 zeroize = "1.8.2"

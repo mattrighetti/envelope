@@ -46,18 +46,18 @@ pub async fn import<W: Write, R: BufRead>(
 mod test {
     use std::io::BufReader;
 
+    use sqlx::SqlitePool;
+
     use super::*;
-    use crate::db::model::EnvironmentRow;
-    use crate::db::test_db;
+    use crate::db::{EnvelopeDb, model::EnvironmentRow};
 
     pub fn stdin_input(s: &str) -> BufReader<&[u8]> {
         BufReader::new(s.as_bytes())
     }
 
-    #[tokio::test]
-    async fn test_import() {
-        let db = test_db().await;
-        let pool = db.get_pool();
+    #[sqlx::test]
+    async fn test_import(pool: SqlitePool) {
+        let db = EnvelopeDb::with(pool.clone());
         let mut output: Vec<u8> = Vec::new();
 
         let res = import(
@@ -73,7 +73,7 @@ mod test {
         let rows = sqlx::query_as::<_, EnvironmentRow>(
             "SELECT * FROM environments WHERE env = 'prod' ORDER BY key",
         )
-        .fetch_all(pool)
+        .fetch_all(&pool)
         .await
         .unwrap();
 
@@ -86,10 +86,9 @@ mod test {
         }
     }
 
-    #[tokio::test]
-    async fn test_import_none() {
-        let db = test_db().await;
-        let pool = db.get_pool();
+    #[sqlx::test]
+    async fn test_import_none(pool: SqlitePool) {
+        let db = EnvelopeDb::with(pool.clone());
 
         let mut output: Vec<u8> = Vec::new();
 
@@ -100,7 +99,7 @@ mod test {
         let rows = sqlx::query_as::<_, EnvironmentRow>(
             "SELECT * FROM environments WHERE env = 'prod' ORDER BY key",
         )
-        .fetch_all(pool)
+        .fetch_all(&pool)
         .await
         .unwrap();
 
@@ -110,10 +109,9 @@ mod test {
         assert_eq!("skipping # key1=value1\n", output.as_str());
     }
 
-    #[tokio::test]
-    async fn test_mul_import() {
-        let db = test_db().await;
-        let pool = db.get_pool();
+    #[sqlx::test]
+    async fn test_mul_import(pool: SqlitePool) {
+        let db = EnvelopeDb::with(pool.clone());
 
         let mut output: Vec<u8> = Vec::new();
 
@@ -130,7 +128,7 @@ mod test {
         let rows = sqlx::query_as::<_, EnvironmentRow>(
             "SELECT * FROM environments WHERE env = 'prod' ORDER BY key",
         )
-        .fetch_all(pool)
+        .fetch_all(&pool)
         .await
         .unwrap();
 

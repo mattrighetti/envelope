@@ -319,28 +319,16 @@ impl EnvelopeDb {
 }
 
 #[cfg(test)]
-pub async fn test_db() -> EnvelopeDb {
-    let pool = sqlx::sqlite::SqlitePoolOptions::new()
-        .connect(":memory:")
-        .await
-        .expect("cannot connect to db");
-
-    sqlx::migrate!("./migrations").run(&pool).await.unwrap();
-
-    EnvelopeDb::with(pool)
-}
-
-#[cfg(test)]
 mod tests {
     use std::collections::HashSet;
 
-    use sqlx::Row;
+    use sqlx::{Row, SqlitePool};
 
     use super::*;
 
-    #[tokio::test]
-    async fn test_env_exists() {
-        let db = test_db().await;
+    #[sqlx::test]
+    async fn test_env_exists(pool: SqlitePool) {
+        let db = EnvelopeDb::with(pool);
         // Insert a test environment
         db.insert("test_env", "test_key", "test_value")
             .await
@@ -351,9 +339,9 @@ mod tests {
         assert!(!db.env_exists("non_existent_env").await.unwrap());
     }
 
-    #[tokio::test]
-    async fn test_get_kv_in_env() {
-        let db = test_db().await;
+    #[sqlx::test]
+    async fn test_get_kv_in_env(pool: SqlitePool) {
+        let db = EnvelopeDb::with(pool);
 
         // Insert test data
         db.insert("env1", "key1", "value1").await.unwrap();
@@ -381,9 +369,9 @@ mod tests {
         assert_eq!(expected, actual);
     }
 
-    #[tokio::test]
-    async fn test_insert() {
-        let db = test_db().await;
+    #[sqlx::test]
+    async fn test_insert(pool: SqlitePool) {
+        let db = EnvelopeDb::with(pool);
 
         // Insert a test environment variable
         db.insert("test_env", "test_key", "test_value")
@@ -406,9 +394,9 @@ mod tests {
         assert_eq!(expected, actual);
     }
 
-    #[tokio::test]
-    async fn test_soft_delete_env() {
-        let db = test_db().await;
+    #[sqlx::test]
+    async fn test_soft_delete_env(pool: SqlitePool) {
+        let db = EnvelopeDb::with(pool);
 
         // Insert test data
         db.insert("env1", "key1", "value1").await.unwrap();
@@ -453,9 +441,9 @@ mod tests {
         assert_eq!(expected, actual);
     }
 
-    #[tokio::test]
-    async fn test_delete_env() {
-        let db = test_db().await;
+    #[sqlx::test]
+    async fn test_delete_env(pool: SqlitePool) {
+        let db = EnvelopeDb::with(pool);
 
         // Insert test data
         db.insert("env1", "key1", "value1").await.unwrap();
@@ -501,9 +489,9 @@ mod tests {
         assert_eq!(expected, actual);
     }
 
-    #[tokio::test]
-    async fn test_delete_var_for_env() {
-        let db = test_db().await;
+    #[sqlx::test]
+    async fn test_delete_var_for_env(pool: SqlitePool) {
+        let db = EnvelopeDb::with(pool);
 
         // Insert test data
         db.insert("env1", "key1", "value1").await.unwrap();
@@ -550,9 +538,9 @@ mod tests {
         assert_eq!(expected, actual);
     }
 
-    #[tokio::test]
-    async fn test_delete_var_all() {
-        let db = test_db().await;
+    #[sqlx::test]
+    async fn test_delete_var_all(pool: SqlitePool) {
+        let db = EnvelopeDb::with(pool);
 
         // Insert test data
         db.insert("env1", "key1", "value1").await.unwrap();
@@ -598,9 +586,9 @@ mod tests {
         assert_eq!(expected, actual);
     }
 
-    #[tokio::test]
-    async fn test_duplicate_env() {
-        let db = test_db().await;
+    #[sqlx::test]
+    async fn test_duplicate_env(pool: SqlitePool) {
+        let db = EnvelopeDb::with(pool);
 
         // Insert test data
         db.insert("env1", "key1", "value1").await.unwrap();
@@ -675,9 +663,9 @@ mod tests {
         assert_eq!(expected, actual);
     }
 
-    #[tokio::test]
-    async fn test_list_var_in_env() {
-        let db = test_db().await;
+    #[sqlx::test]
+    async fn test_list_var_in_env(pool: SqlitePool) {
+        let db = EnvelopeDb::with(pool);
 
         db.exec(
             r"INSERT INTO environments (env, key, value, created_at)
@@ -709,9 +697,9 @@ mod tests {
         );
     }
 
-    #[tokio::test]
-    async fn test_list_all_var_in_env() {
-        let db = test_db().await;
+    #[sqlx::test]
+    async fn test_list_all_var_in_env(pool: SqlitePool) {
+        let db = EnvelopeDb::with(pool);
 
         db.exec(
             r"INSERT INTO environments (env, key, value, created_at)
@@ -771,9 +759,9 @@ mod tests {
         );
     }
 
-    #[tokio::test]
-    async fn test_list_ordering() {
-        let db = test_db().await;
+    #[sqlx::test]
+    async fn test_list_ordering(pool: SqlitePool) {
+        let db = EnvelopeDb::with(pool);
 
         db.exec(
             r"INSERT INTO environments (env, key, value, created_at)
@@ -867,9 +855,9 @@ mod tests {
         );
     }
 
-    #[tokio::test]
-    async fn test_list_envs() {
-        let db = test_db().await;
+    #[sqlx::test]
+    async fn test_list_envs(pool: SqlitePool) {
+        let db = EnvelopeDb::with(pool);
 
         db.exec(
             r"INSERT INTO environments (env, key, value, created_at)
@@ -898,9 +886,9 @@ mod tests {
         );
     }
 
-    #[tokio::test]
-    async fn test_diff() {
-        let db = test_db().await;
+    #[sqlx::test]
+    async fn test_diff(pool: SqlitePool) {
+        let db = EnvelopeDb::with(pool);
 
         db.exec(
             r"INSERT INTO environments (env, key, value, created_at)
@@ -944,9 +932,9 @@ mod tests {
         );
     }
 
-    #[tokio::test]
-    async fn test_diff_nonexistent_env() {
-        let db = test_db().await;
+    #[sqlx::test]
+    async fn test_diff_nonexistent_env(pool: SqlitePool) {
+        let db = EnvelopeDb::with(pool);
 
         db.insert("env1", "key1", "value1").await.unwrap();
 
@@ -981,9 +969,9 @@ mod tests {
         );
     }
 
-    #[tokio::test]
-    async fn test_revert() {
-        let db = test_db().await;
+    #[sqlx::test]
+    async fn test_revert(pool: SqlitePool) {
+        let db = EnvelopeDb::with(pool);
 
         db.exec(
             r"INSERT INTO environments (env, key, value, created_at)
@@ -1032,9 +1020,9 @@ mod tests {
         );
     }
 
-    #[tokio::test]
-    async fn test_ek_history() {
-        let db = test_db().await;
+    #[sqlx::test]
+    async fn test_ek_history(pool: SqlitePool) {
+        let db = EnvelopeDb::with(pool);
 
         db.exec(
             r"INSERT INTO environments (env, key, value, created_at)
