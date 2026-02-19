@@ -52,7 +52,6 @@ fn escape_cmd_value(value: &str) -> String {
         match ch {
             '^' => escaped.push_str("^^"),
             '"' => escaped.push_str("^\""),
-            '%' => escaped.push_str("%%"),
             _ => escaped.push(ch),
         }
     }
