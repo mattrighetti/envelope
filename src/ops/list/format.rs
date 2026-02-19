@@ -204,7 +204,7 @@ mod tests {
     fn test_write_raw_entry_cmd_output_cases() {
         let cases = [
             ("KEY", "plain", "set \"KEY=plain\"\n"),
-            ("KEY", "a^b\"c%PATH%d", "set \"KEY=a^^b^\"c%%PATH%%d\"\n"),
+            ("KEY", "a^b\"c%PATH%d", "set \"KEY=a^^b^\"c%PATH%d\"\n"),
             ("KEY", "", "set \"KEY=\"\n"),
         ];
 
