@@ -84,7 +84,22 @@ $ envelope import dev .env
 
 Export variables to your shell:
 ```console
+# sh / bash / zsh
 $ export $(envelope list dev)
+# or, if the above fails:
+$ eval "$(envelope list dev --shell sh)"
+
+# fish
+$ envelope list dev --shell fish | source
+
+# nu
+$ envelope list dev --shell nu | from nuon | load-env
+
+# cmd
+> for /f "delims=" %i in ('envelope list example --shell cmd') do @%i
+
+# powershell
+PS> envelope list dev --shell powershell | Invoke-Expression
 ```
 
 Verify which environment is active:
@@ -164,6 +179,18 @@ DEBUG_MODE=true
 SECRET_KEY=mysecretkey123
 SMTP_HOST=smtp.example.com
 ```
+
+Generate shell-specific output with `--shell`:
+```console
+  $ envelope list dev --shell kv          # KEY=value
+  $ envelope list dev --shell sh          # export KEY='value'
+  $ envelope list dev --shell fish        # set -gx KEY 'value'
+  $ envelope list dev --shell nu          # {"KEY": "value"} (nuon record)
+  > envelope list dev --shell cmd         # set "KEY=value"
+PS> envelope list dev --shell powershell  # $env:KEY = "value"
+```
+
+Supported aliases: `bash` and `zsh` for `sh`, `nushell` for `nu`, and `pwsh` for `powershell`.
 
 Pretty print with a table format:
 ```console
