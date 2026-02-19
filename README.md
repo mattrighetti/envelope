@@ -84,14 +84,23 @@ $ envelope import dev .env
 
 Export variables to your shell:
 ```console
-# sh / Bash / Zsh
+# sh / bash / zsh
+$ export $(envelope list dev)
+# or, if the above fails:
 $ eval "$(envelope list dev --shell sh)"
 
-# PowerShell
+# fish
+$ envelope list dev --shell fish | source
+
+# nu
+$ envelope list dev --shell nu | from nuon | load-env
+
+# cmd
+> for /f "delims=" %i in ('envelope list example --shell cmd') do @%i
+
+# powershell
 PS> envelope list dev --shell powershell | Invoke-Expression
 ```
-
-Other shell formats are available with `--shell`: `kv`, `fish`, `nu`, `cmd`, `powershell`.
 
 Verify which environment is active:
 ```console
