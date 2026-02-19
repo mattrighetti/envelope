@@ -51,7 +51,35 @@ Lists all environments.
 ```bash
 envelope list dev
 ```
-Lists all environment variables in the 'dev' environment.
+Lists all environment variables in the 'dev' environment using the default `kv` format (`KEY=value`).
+
+```bash
+envelope list dev --shell sh
+```
+Lists all environment variables in the 'dev' environment as `export KEY='value'` commands compatible with POSIX-compliant shells (`sh`, `bash`, `zsh`).
+
+```bash
+envelope list dev --shell fish
+```
+Lists all environment variables in the 'dev' environment as `set -gx KEY 'value'` commands for Fish.
+
+```bash
+envelope list dev --shell nu
+```
+Lists all environment variables in the 'dev' environment as a Nushell record suitable for `load-env`.
+
+```bash
+envelope list dev --shell cmd
+```
+Lists all environment variables in the 'dev' environment as `set "KEY=value"` commands for Windows Command Prompt.
+
+```bash
+envelope list dev --shell powershell
+```
+Lists all environment variables in the 'dev' environment as `$env:KEY = "value"` commands for PowerShell.
+
+`--shell` supports: `kv`, `sh`, `fish`, `nu`, `cmd`, `powershell`.
+Aliases: `bash`/`zsh` -> `sh`, `nushell` -> `nu`, `pwsh` -> `powershell`.
 
 ```bash
 envelope duplicate dev dev-local

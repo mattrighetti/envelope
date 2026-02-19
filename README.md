@@ -84,8 +84,14 @@ $ envelope import dev .env
 
 Export variables to your shell:
 ```console
-$ export $(envelope list dev)
+# sh / Bash / Zsh
+$ eval "$(envelope list dev --shell sh)"
+
+# PowerShell
+PS> envelope list dev --shell powershell | Invoke-Expression
 ```
+
+Other shell formats are available with `--shell`: `kv`, `fish`, `nu`, `cmd`, `powershell`.
 
 Verify which environment is active:
 ```console
@@ -164,6 +170,18 @@ DEBUG_MODE=true
 SECRET_KEY=mysecretkey123
 SMTP_HOST=smtp.example.com
 ```
+
+Generate shell-specific output with `--shell`:
+```console
+  $ envelope list dev --shell kv          # KEY=value
+  $ envelope list dev --shell sh          # export KEY='value'
+  $ envelope list dev --shell fish        # set -gx KEY 'value'
+  $ envelope list dev --shell nu          # {"KEY": "value"} (nuon record)
+  > envelope list dev --shell cmd         # set "KEY=value"
+PS> envelope list dev --shell powershell  # $env:KEY = "value"
+```
+
+Supported aliases: `bash` and `zsh` for `sh`, `nushell` for `nu`, and `pwsh` for `powershell`.
 
 Pretty print with a table format:
 ```console
