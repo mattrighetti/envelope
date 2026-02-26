@@ -51,6 +51,12 @@ $ envelope --version
 envelope 0.3.11
 ```
 
+### Arch
+There is an aur package that packages the binary, called `envelope-bin`:
+```console
+yay -S envelope-bin
+```
+
 ## Building
 envelope is written in Rust, so you'll need the [Rust
 compiler](https://www.rust-lang.org/).
