@@ -307,9 +307,32 @@ impl EnvelopeDb {
         .context("failed to read variable history")
     }
 
+    /// Returns the number of row changes caused by INSERT, UPDATE or DELETE
+    /// statements since the current database connection was opened
+    pub(crate) async fn total_changes(&self) -> Result<i64> {
+        sqlx::query_scalar("SELECT total_changes()")
+            .fetch_one(&self.db)
+            .await
+            .context("failed to read total_changes")
+    }
+
+    /// Serializes envelope interal database into bytes
+    pub(crate) async fn serialize(&self) -> Result<Vec<u8>> {
+        let mut conn = self
+            .db
+            .acquire()
+            .await
+            .context("failed to acquire envelope connection")?;
+        let buf = conn
+            .serialize(None)
+            .await
+            .context("failed to serialize envelope")?;
+        Ok(buf.as_ref().to_vec())
+    }
+
     #[cfg(test)]
-    async fn exec(&self, sql: &str) -> Result<()> {
-        sqlx::query(sql)
+    async fn exec(&self, sql: &'static str) -> Result<()> {
+        sqlx::raw_sql(sql)
             .execute(&self.db)
             .await
             .context("db error")?;
