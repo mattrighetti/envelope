@@ -1,6 +1,7 @@
 use std::fs;
 
 use anyhow::Result;
+use zeroize::Zeroizing;
 
 use crate::core::crypto::decrypt;
 use crate::core::crypto::header::EnvelopeFileHeader;
@@ -21,6 +22,12 @@ impl LockedEnvelope {
         Self { header, ciphertext }
     }
 
+    /// Decrypts the envelope to raw bytes. Returned in `Zeroizing` to not leak
+    /// data.
+    pub fn decrypt_bytes(&self, password: &str) -> Result<Zeroizing<Vec<u8>>> {
+        decrypt(&self.ciphertext, &self.header, password.as_bytes()).map(Zeroizing::new)
+    }
+
     /// Decrypts the envelope database file.
     ///
     /// Reads the encrypted file, decrypts it with the provided password,
@@ -31,7 +38,8 @@ impl LockedEnvelope {
     /// operation.
     pub fn unlock(self, password: &str) -> Result<()> {
         let path = envelope_path()?;
-        let plaintext = decrypt(&self.ciphertext, &self.header, password.as_bytes())?;
+        let plaintext =
+            decrypt(&self.ciphertext, &self.header, password.as_bytes()).map(Zeroizing::new)?;
 
         // Atomic write: write to temp file, then rename
         let tmp_path = envelope_tmp_path()?;

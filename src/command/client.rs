@@ -96,11 +96,21 @@ impl EnvelopeCmd {
                 cmd.run_with_db(&db).await
             }
 
+            // all other commands when locked: ask for password, decrypt to
+            // memory, run, re-encrypt if modified
+            (cmd, Some(EnvelopeState::Locked(envelope))) => {
+                let password = utils::prompt_password("Password: ")?;
+                let plaintext = envelope.decrypt_bytes(&password)?;
+                let unlocked = UnlockedEnvelope::open_in_memory(&plaintext).await?;
+                cmd.run_with_db(&unlocked.db).await?;
+                if unlocked.db.total_changes().await? > 0 {
+                    unlocked.store_locked(&password).await?;
+                }
+                Ok(())
+            }
+
             // error cases
             (_, None) => bail!("envelope is not initialized, run `envelope init` first"),
-            (_, Some(EnvelopeState::Locked(_))) => {
-                bail!("envelope is locked, run `envelope unlock` first")
-            }
         }
     }
 
