@@ -39,6 +39,9 @@ jobs:
       TARGET_FLAGS: ""
       TARGET_DIR: ./target
       RUST_BACKTRACE: 1
+      # We pin to a version to make sure CI continues to work as cross
+      # releases in the past have broken things in subtle ways.
+      CROSS_VERSION: 0.2.5
 
     strategy:
       matrix:
@@ -83,11 +86,23 @@ jobs:
           toolchain: ${{ matrix.rust }}
           target: ${{ matrix.target }}
 
-      - name: Use Cross
+      - name: Cache Rust dependencies
+        uses: Swatinem/rust-cache@v2
+
+      - name: Install cross
+        if: matrix.os == 'ubuntu-latest'
+        uses: taiki-e/install-action@v2
+        with:
+          tool: cross@${{ env.CROSS_VERSION }}
+
+      - name: Configure environment
         shell: bash
         run: |
-          cargo install cross
-          echo "CARGO=cross" >> $GITHUB_ENV
+          if [ "${{ matrix.os }}" = "ubuntu-latest" ]; then
+            echo "CARGO=cross" >> $GITHUB_ENV
+          else
+            echo "CARGO=cargo" >> $GITHUB_ENV
+          fi
           echo "TARGET_FLAGS=--target ${{ matrix.target }}" >> $GITHUB_ENV
           echo "TARGET_DIR=./target/${{ matrix.target }}" >> $GITHUB_ENV
 
