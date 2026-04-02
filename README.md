@@ -57,46 +57,14 @@ There is an aur package that packages the binary, called `envelope-bin`:
 yay -S envelope-bin
 ```
 
-## Building
-envelope is written in Rust, so you'll need the [Rust
-compiler](https://www.rust-lang.org/).
-
-To build envelope:
+## Building from Source
+envelope is written in Rust. You'll need the [Rust compiler](https://www.rust-lang.org/).
 ```console
 $ git clone https://github.com/mattrighetti/envelope
 $ cd envelope
 $ cargo build --release
 $ ./target/release/envelope --version
-envelope 0.3.11
-```
-
-## How it works
-`envelope` is a command line utility that leverages an SQLite database
-to keep track of your environment variables so you can easily switch between
-different configurations.
-
-## Quick Start
-
-Initialize envelope in your project directory:
-```console
-$ cd my-project
-$ envelope init
-```
-
-Import your existing `.env` file:
-```console
-$ envelope import dev .env
-```
-
-Export variables to your shell:
-```console
-$ export $(envelope list dev)
-```
-
-Verify which environment is active:
-```console
-$ envelope check
-dev
+envelope 0.7.1
 ```
 
 ## Usage
@@ -240,7 +208,7 @@ OPTIONAL_VAR=
 ```
 
 ### Delete
-Delete a specific variable from an environment:
+Delete a specific variable from an environment (soft delete — can be reverted):
 ```console
 $ envelope delete --env dev --key API_KEY
 $ envelope list dev
@@ -374,8 +342,8 @@ database locked successfully
 
 > [!NOTE]
 >
-> when the database is locked, all other commands
-> will fail until you run `envelope unlock`.
+> When the database is locked, you'll be prompted to unlock it when needed.
+> You can still run commands on a locked envelope.
 
 ### Unlock
 Decrypt the envelope database with the password you set when locking it.

@@ -6,25 +6,101 @@ envelope — a modern environment variables manager
 
 SYNOPSIS
 ========
-`envelope [command]`
+`envelope [COMMAND] [OPTIONS]`
 
-*envelope* is a modern environment variables manager.
+DESCRIPTION
+===========
+*envelope* stores environment variables in a local SQLite database, organized
+into named environments. Variables can be imported from `.env` files, edited
+interactively, diffed, and tracked with full history. The database can be
+encrypted at rest and commands can inject variables directly into subprocesses.
+
+TERMINOLOGY
+===========
+
+**environment** (or *env*)
+:   A named collection of environment variables, like "dev", "prod", or "staging".
+    Stored in the `.envelope` database.
+
+**key**
+:   The name of a variable, e.g., `DATABASE_URL`, `API_KEY`, `DEBUG`.
+
+**value**
+:   The value assigned to a key, e.g., `postgres://localhost:5432`, `sk-1234abcd`, `true`.
+
+**key-value pair** or **variable**
+:   A key and its value together, represented as `KEY=VALUE`.
 
 COMMANDS
 ========
-- **add**: Add environment variables to a specific environment.
-- **check**: Check which environment is currently exported.
-- **delete**: Delete environment variables.
-- **drop**: Drop an environment.
-- **duplicate**: Create a copy of another environment.
-- **diff**: Diff two existing environments.
-- **edit**: Edit environment variables in the editor.
-- **history**: Display the historical values of a specific key in a given environment.
-- **init**: Initialize envelope.
-- **import**: Import environment variables.
-- **list**: List saved environments and/or their variables.
-- **revert**: Revert environment variables to a previous state.
-- **help**: Print this message or the help of the given subcommand(s).
+
+**init**
+:   Initialize envelope in the current directory. Creates the `.envelope`
+    SQLite database used to store all environments and variables.
+
+**add** *env* *key* [*value*] [`--stdin`]
+:   Add or update variable *key* in environment *env*. If *value* is omitted
+    the variable is set to an empty string.
+
+    `--stdin`  Read the value from stdin (useful for secrets — avoids shell history).
+
+**check**
+:   Compare the current shell's environment against all stored environments
+    and report which ones are active.
+
+**delete** [`--env` *env*] [`--key` *key*]
+:   Soft-delete a variable or environment (marks as deleted but preserves history).
+    Behavior depends on which flags are given:
+
+    - `--env` *env* `--key` *key*  Delete variable *key* from *env* only.
+    - `--key` *key*                Delete variable *key* from every environment.
+    - `--env` *env*                Delete the entire environment *env*.
+
+**diff** *env1* *env2*
+:   Compare two environments. Variables only in *env1* are shown in green,
+    only in *env2* in red, and variables present in both with different values
+    in gray.
+
+**drop** *env*
+:   Hard-delete environment *env* and all its variables permanently (cannot be recovered).
+
+**duplicate** *source* *target*
+:   Create a new environment *target* as a copy of *source*.
+
+**edit** *env*
+:   Open environment *env* in your editor for interactive editing.
+    The editor is chosen from `ENVELOPE_EDITOR`, falling back to `EDITOR`.
+
+**history** *env* *key*
+:   Show all past values of variable *key* in environment *env*, newest first.
+
+**import** *env* [*file*]
+:   Import variables from a `.env`-formatted *file* into environment *env*.
+    Reads from stdin if *file* is not provided.
+
+**list** [*env*] [`-p`] [`-t`] [`-s` *order*]
+:   Without *env*, list all environment names. With *env*, list its variables.
+
+    `-p`, `--pretty-print`  Display variables in a formatted table.
+    `-t`, `--truncate`      Truncate long values in table output (implies `-p`).
+    `-s`, `--sort` *order*  Sort order: `k` key asc, `kd` key desc, `v` value asc,
+                            `vd` value desc, `d` date asc (default), `dd` date desc.
+
+**lock**
+:   Encrypt the database with a password. Once locked, every command that reads
+    or writes data will prompt for the password.
+
+**revert** *env* *key*
+:   Roll back variable *key* in environment *env* to its previous value.
+
+**run** [`-i`] *env* `--` *command* [*args*...]
+:   Execute *command* with the variables from environment *env* injected.
+
+    `-i`, `--isolated`  Do not inherit variables from the parent shell —
+                        only the stored variables are visible to the command.
+
+**unlock**
+:   Decrypt the database so that subsequent commands run without a password prompt.
 
 EXAMPLES
 ========
@@ -54,14 +130,23 @@ envelope list dev
 Lists all environment variables in the 'dev' environment.
 
 ```bash
+envelope list -p -s kd dev
+```
+Lists variables in 'dev' in a formatted table, sorted by key descending.
+
+```bash
 envelope duplicate dev dev-local
 ```
 Creates a new 'dev-local' environment with the same variables stored in 'dev'.
 
 ```bash
+envelope run dev -- bash
+# (now in a subshell with 'dev' environment variables)
 envelope check
 ```
-Returns all the environments that are active by comparing active environment variables in the current process.
+Reports which stored environments are currently active. Useful to verify which
+environment's variables you're working with. In the example, `check` would show
+that the 'dev' environment is active in the current shell.
 
 ```bash
 envelope edit dev-local
@@ -71,7 +156,8 @@ Edit variables of 'dev-local' in the default editor. If you want to specify a di
 ```bash
 envelope drop dev-local
 ```
-Hard delete from the database every environment variable stored in 'dev-local'.
+Permanently remove environment 'dev-local' and all its variables from the database.
+Unlike `delete`, this cannot be undone.
 
 ```bash
 envelope add dev-local KEY VALUE
@@ -79,9 +165,19 @@ envelope add dev-local KEY VALUE
 Adds environment variable `KEY=VALUE` in 'dev-local'.
 
 ```bash
-envelope delete dev-local KEY
+envelope add dev-local SECRET_KEY --stdin
 ```
-Deletes environment variable `KEY` in 'dev-local'.
+Prompts for the value of `SECRET_KEY` via stdin, keeping it out of shell history.
+
+```bash
+envelope delete --env dev-local --key KEY
+```
+Soft-delete environment variable `KEY` in 'dev-local' (history is preserved and can be reverted).
+
+```bash
+envelope delete --key KEY
+```
+Deletes environment variable `KEY` from every environment.
 
 ```bash
 envelope diff env1 env2
@@ -97,6 +193,26 @@ Displays the historical values of the environment variable `KEY` in 'dev-local'.
 envelope revert dev-local KEY
 ```
 Reverts the environment variable `KEY` in 'dev-local' to its previous state.
+
+```bash
+envelope run dev -- node server.js
+```
+Runs `node server.js` with environment variables from the 'dev' environment injected into the process.
+
+```bash
+envelope run --isolated dev -- node server.js
+```
+Same as above, but the command does not inherit any variables from the parent shell — only those stored in 'dev' are available.
+
+```bash
+envelope lock
+```
+Encrypts the envelope database with a password. After locking, a password is required to run any command.
+
+```bash
+envelope unlock
+```
+Decrypts the envelope database. After unlocking, commands run without prompting for a password.
 
 EXIT STATUSES
 =============
