@@ -1,0 +1,17 @@
+[[scenario]]
+name = "check"
+
+[[scenario.setup]]
+commands = [
+  ["init"],
+  ["add", "dev", "DATABASE_URL", "postgres://localhost/dev"],
+  ["add", "dev", "SECRET_KEY", "abc123"],
+]
+
+[[scenario.case]]
+label = "check active env"
+env = ["DATABASE_URL=postgres://localhost/dev", "SECRET_KEY=abc123"]
+command = ["check"]
+stdout = """
+dev
+"""

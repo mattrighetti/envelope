@@ -1,0 +1,47 @@
+[[scenario]]
+name = "listing"
+
+[[scenario.setup]]
+commands = [
+  ["init"],
+  ["add", "dev", "DATABASE_URL", "postgres://localhost/dev"],
+  ["add", "dev", "SECRET_KEY", "abc123"],
+  ["add", "prod", "DATABASE_URL", "postgres://prod.host/app"],
+]
+
+[[scenario.case]]
+label = "init twice rejected"
+command = ["init"]
+status = 1
+stderr = """
+error: envelope is already initialized
+"""
+
+[[scenario.case]]
+label = "list dev"
+command = ["list", "dev"]
+stdout = """
+DATABASE_URL=postgres://localhost/dev
+SECRET_KEY=abc123
+"""
+
+[[scenario.case]]
+label = "list envs"
+command = ["list"]
+stdout = """
+dev
+prod
+"""
+
+[[scenario.case]]
+label = "list pretty"
+command = ["list", "dev", "--pretty-print"]
+stdout = """
++-------------+--------------+--------------------------+
+| ENVIRONMENT | VARIABLE     | VALUE                    |
++=============+==============+==========================+
+| dev         | DATABASE_URL | postgres://localhost/dev |
++-------------+--------------+--------------------------+
+| dev         | SECRET_KEY   | abc123                   |
++-------------+--------------+--------------------------+
+"""

@@ -1,0 +1,44 @@
+[[scenario]]
+name = "run"
+
+[[scenario.setup]]
+commands = [
+  ["init"],
+  ["add", "dev", "DATABASE_URL", "postgres://localhost/dev"],
+]
+
+[[scenario.case]]
+label = "run missing env rejected"
+command = ["run", "missing", "--", "sh", "-c", "exit 0"]
+status = 1
+stderr = """
+error: environment 'missing' does not exist
+"""
+
+[[scenario.case]]
+label = "run inherits parent env"
+env = ["PARENT_ONLY=present"]
+command = ["run", "dev", "--", "sh", "-c", "printf \"%s|%s\" \"$DATABASE_URL\" \"$PARENT_ONLY\""]
+stdout = "postgres://localhost/dev|present"
+
+[[scenario.case]]
+label = "run isolated clears parent env"
+env = ["PARENT_ONLY=present"]
+command = ["run", "dev", "--isolated", "--", "sh", "-c", "printf \"%s|%s\" \"${DATABASE_URL:-}\" \"${PARENT_ONLY:-}\""]
+stdout = "postgres://localhost/dev|"
+
+[[scenario.case]]
+label = "list missing env rejected"
+command = ["list", "missing"]
+status = 1
+stderr = """
+error: environment 'missing' does not exist
+"""
+
+[[scenario.case]]
+label = "diff missing env rejected"
+command = ["diff", "missing", "prod"]
+status = 1
+stderr = """
+error: environment 'missing' does not exist
+"""

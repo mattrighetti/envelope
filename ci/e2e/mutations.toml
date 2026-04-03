@@ -1,0 +1,65 @@
+[[scenario]]
+name = "mutations"
+
+[[scenario.setup]]
+commands = [
+  ["init"],
+  ["add", "dev", "DATABASE_URL", "postgres://localhost/dev"],
+  ["add", "dev", "SECRET_KEY", "abc123"],
+  ["add", "prod", "DATABASE_URL", "postgres://prod.host/app"],
+]
+
+[[scenario.case]]
+label = "duplicate dev staging"
+command = ["duplicate", "dev", "staging"]
+
+[[scenario.case]]
+label = "list staging"
+command = ["list", "staging"]
+stdout = """
+DATABASE_URL=postgres://localhost/dev
+SECRET_KEY=abc123
+"""
+
+[[scenario.case]]
+label = "duplicate existing env rejected"
+command = ["duplicate", "dev", "staging"]
+status = 1
+stderr = """
+error: target environment 'staging' already exists
+"""
+
+[[scenario.case]]
+label = "delete SECRET_KEY from dev"
+command = ["delete", "-e", "dev", "-k", "SECRET_KEY"]
+
+[[scenario.case]]
+label = "list dev after delete"
+command = ["list", "dev"]
+stdout = """
+DATABASE_URL=postgres://localhost/dev
+"""
+
+[[scenario.case]]
+label = "drop staging"
+command = ["drop", "staging"]
+
+[[scenario.case]]
+label = "list envs after drop"
+command = ["list"]
+stdout = """
+dev
+prod
+"""
+
+[[scenario.case]]
+label = "drop prod"
+command = ["drop", "prod"]
+
+[[scenario.case]]
+label = "drop dev"
+command = ["drop", "dev"]
+
+[[scenario.case]]
+label = "list envs empty"
+command = ["list"]

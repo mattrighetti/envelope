@@ -1,0 +1,240 @@
+#!/usr/bin/env python3
+"""
+End-to-end coverage for the public `envelope` CLI.
+
+This runner intentionally focuses on unlocked flows and compares exact command
+results:
+- exit status
+- stdout
+- stderr
+
+Local usage:
+  cargo build --release
+  ci/e2e-test target/release/envelope
+
+Run a subset:
+  ci/e2e-test target/release/envelope run
+
+Usage: ci/e2e-test <path-to-envelope-binary> [case-filter]
+"""
+
+from __future__ import annotations
+
+import os
+import shlex
+import shutil
+import subprocess
+import sys
+import tempfile
+import time
+import tomllib
+from pathlib import Path
+
+ROOT = Path(__file__).resolve().parent.parent
+SPEC_DIR = ROOT / "ci" / "e2e"
+FAKE_EDITOR = """#!/usr/bin/env python3
+from pathlib import Path
+import sys
+
+path = Path(sys.argv[1])
+lines = path.read_text().splitlines()
+out = []
+for line in lines:
+    if line.startswith("DATABASE_URL="):
+        out.append("DATABASE_URL=postgres://localhost/edited")
+    elif line.startswith("WRITE_CHECK="):
+        out.append("#WRITE_CHECK=yes")
+    else:
+        out.append(line)
+out.append("EDITED_KEY=from-editor")
+path.write_text("\\n".join(out) + "\\n")
+"""
+
+
+class Failure(Exception):
+    pass
+
+
+def fail(message: str) -> None:
+    raise Failure(message)
+
+
+def pass_case(label: str) -> None:
+    print(f"[ok] {label}")
+
+
+def load_spec() -> dict:
+    spec = {"scenario": []}
+
+    for path in sorted(SPEC_DIR.glob("*.toml")):
+        with path.open("rb") as handle:
+            loaded = tomllib.load(handle)
+
+        scenarios = loaded.get("scenario", [])
+        if len(scenarios) > 1:
+            fail(f"{path.name} must define at most one scenario")
+        spec["scenario"].extend(scenarios)
+
+    return spec
+
+
+def make_testdir() -> Path:
+    (ROOT / "tmp").mkdir(exist_ok=True)
+    testdir = Path(tempfile.mkdtemp(prefix="e2e.", dir=ROOT / "tmp"))
+    fake_editor = testdir / "fake-editor"
+    fake_editor.write_text(FAKE_EDITOR)
+    fake_editor.chmod(0o755)
+    return testdir
+
+
+def reset_state(testdir: Path) -> None:
+    for name in (".envelope",):
+        path = testdir / name
+        if path.exists():
+            path.unlink()
+
+
+def format_command(command: list[str]) -> str:
+    if os.name == "nt":
+        return subprocess.list2cmdline(command)
+    return " ".join(shlex.quote(arg) for arg in command)
+
+
+def print_failure_context(label: str, actual_status: int, stdout: str, stderr: str, command: list[str]) -> None:
+    print(f"FAIL: {label}", file=sys.stderr)
+    print(f"status: {actual_status}", file=sys.stderr)
+    print(f"command: {format_command(command)}", file=sys.stderr)
+    print("stdout:", file=sys.stderr)
+    print(stdout, end="" if stdout.endswith("\n") or not stdout else "\n", file=sys.stderr)
+    print("stderr:", file=sys.stderr)
+    print(stderr, end="" if stderr.endswith("\n") or not stderr else "\n", file=sys.stderr)
+
+
+def assert_stream(label: str, stream: str, expected: str, actual: str) -> None:
+    if actual != expected:
+        print(f"FAIL: {label}: unexpected {stream}", file=sys.stderr)
+        expected_lines = expected.splitlines(keepends=True)
+        actual_lines = actual.splitlines(keepends=True)
+        import difflib
+
+        sys.stderr.writelines(
+            difflib.unified_diff(
+                expected_lines,
+                actual_lines,
+                fromfile=f"expected-{stream}",
+                tofile=f"actual-{stream}",
+            )
+        )
+        raise Failure("unexpected command output")
+
+
+def run_command(testdir: Path, binary: Path, step: dict) -> subprocess.CompletedProcess[str]:
+    env = os.environ.copy()
+    for env_var in step.get("env", []):
+        key, value = env_var.format(fake_editor=testdir / "fake-editor").split("=", 1)
+        env[key] = value
+
+    command = [str(binary), *step["command"]]
+    return subprocess.run(
+        command,
+        cwd=testdir,
+        env=env,
+        input=step.get("stdin", ""),
+        text=True,
+        capture_output=True,
+        check=False,
+    )
+
+
+def execute_step(testdir: Path, binary: Path, step: dict, assert_result: bool) -> None:
+    if "sleep_ms" in step:
+        time.sleep(step["sleep_ms"] / 1000)
+        return
+
+    result = run_command(testdir, binary, step)
+    expected_status = step.get("status", 0)
+    expected_stdout = step.get("stdout", "")
+    expected_stderr = step.get("stderr", "")
+
+    if result.returncode != expected_status:
+        print_failure_context(step["label"], result.returncode, result.stdout, result.stderr, step["command"])
+        fail(f"expected exit {expected_status}, got {result.returncode}")
+
+    if assert_result:
+        assert_stream(step["label"], "stdout", expected_stdout, result.stdout)
+        assert_stream(step["label"], "stderr", expected_stderr, result.stderr)
+        pass_case(step["label"])
+
+
+def expand_setup_entries(entries: list[dict]) -> list[dict]:
+    steps: list[dict] = []
+
+    for entry in entries:
+        if "commands" in entry:
+            for index, command in enumerate(entry["commands"], start=1):
+                steps.append(
+                    {
+                        "label": entry.get("label", f"setup command {index}"),
+                        "command": command,
+                    }
+                )
+            continue
+
+        steps.append(entry)
+
+    return steps
+
+
+def scenario_setup_steps(scenario: dict) -> list[dict]:
+    return expand_setup_entries(scenario.get("setup", []))
+
+
+def scenario_matches(scenario: dict, case: dict, case_filter: str) -> bool:
+    if not case_filter:
+        return True
+    return case_filter in scenario["name"] or case_filter in case["label"]
+
+
+def main() -> int:
+    binary_arg = sys.argv[1] if len(sys.argv) > 1 else ""
+    case_filter = sys.argv[2] if len(sys.argv) > 2 else ""
+    if not binary_arg:
+        print("Usage: ci/e2e-test <path-to-envelope-binary> [case-filter]", file=sys.stderr)
+        return 1
+
+    binary = Path(binary_arg).resolve()
+    spec = load_spec()
+    ran_cases = 0
+
+    try:
+        for scenario in spec["scenario"]:
+            cases = [case for case in scenario["case"] if scenario_matches(scenario, case, case_filter)]
+            if not cases:
+                continue
+
+            testdir = make_testdir()
+            try:
+                reset_state(testdir)
+
+                for step in scenario_setup_steps(scenario):
+                    execute_step(testdir, binary, step, assert_result=False)
+
+                for case in cases:
+                    execute_step(testdir, binary, case, assert_result=True)
+                    ran_cases += 1
+            finally:
+                shutil.rmtree(testdir, ignore_errors=True)
+
+        if ran_cases == 0:
+            fail(f"no cases matched filter '{case_filter}'")
+
+        print()
+        print("All unlocked e2e tests passed.")
+        return 0
+    except Failure as error:
+        print(f"FAIL: {error}", file=sys.stderr)
+        return 1
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

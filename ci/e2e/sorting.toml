@@ -1,0 +1,76 @@
+[[scenario]]
+name = "sorting and cli errors"
+
+[[scenario.setup]]
+commands = [
+  ["init"],
+  ["add", "dev", "B_KEY", "bravo"],
+  ["add", "dev", "A_KEY", "alpha"],
+  ["add", "dev", "C_KEY", "charlie"],
+]
+
+[[scenario.case]]
+label = "list sort by key"
+command = ["list", "dev", "--sort", "key"]
+stdout = """
+A_KEY=alpha
+B_KEY=bravo
+C_KEY=charlie
+"""
+
+[[scenario.case]]
+label = "list sort by key desc alias"
+command = ["list", "dev", "--sort", "kd"]
+stdout = """
+C_KEY=charlie
+B_KEY=bravo
+A_KEY=alpha
+"""
+
+[[scenario.case]]
+label = "list sort by value alias"
+command = ["list", "dev", "-s", "v"]
+stdout = """
+A_KEY=alpha
+B_KEY=bravo
+C_KEY=charlie
+"""
+
+[[scenario.case]]
+label = "list invalid sort rejected"
+command = ["list", "dev", "--sort", "nope"]
+status = 2
+stderr = """
+error: invalid value 'nope' for '--sort <SORT>'
+  [possible values: key, value, date, key-desc, value-desc, date-desc]
+
+For more information, try '--help'.
+"""
+
+[[scenario.case]]
+label = "list unexpected flag rejected"
+command = ["list", "--bogus"]
+status = 2
+stderr = """
+error: unexpected argument '--bogus' found
+
+  tip: to pass '--bogus' as a value, use '-- --bogus'
+
+Usage: envelope list [OPTIONS] [ENV]
+
+For more information, try '--help'.
+"""
+
+[[scenario.case]]
+label = "add missing required args rejected"
+command = ["add"]
+status = 2
+stderr = """
+error: the following required arguments were not provided:
+  <ENV>
+  <KEY>
+
+Usage: envelope add <ENV> <KEY> [VALUE]
+
+For more information, try '--help'.
+"""
