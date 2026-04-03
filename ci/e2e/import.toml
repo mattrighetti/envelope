@@ -1,0 +1,37 @@
+[[scenario]]
+name = "import"
+
+[[scenario.setup]]
+commands = [
+  ["init"],
+]
+
+[[scenario.case]]
+label = "import from file"
+command = ["import", "imported", "../../ci/e2e/.env.staging"]
+stdout = """
+skipping # comment should be skipped
+invalid BROKEN LINE, skipping
+"""
+
+[[scenario.case]]
+label = "list imported"
+command = ["list", "imported"]
+stdout = """
+API_URL=https://staging.example.com
+STAGING_TOKEN=staging-secret
+"""
+
+[[scenario.case]]
+label = "import from stdin"
+stdin = """
+PIPE_ONLY=from-stdin
+"""
+command = ["import", "pipeenv"]
+
+[[scenario.case]]
+label = "list pipeenv"
+command = ["list", "pipeenv"]
+stdout = """
+PIPE_ONLY=from-stdin
+"""

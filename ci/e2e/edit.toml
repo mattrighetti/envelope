@@ -1,0 +1,26 @@
+[[scenario]]
+name = "edit"
+
+[[scenario.setup]]
+commands = [
+  ["init"],
+  ["add", "dev", "DATABASE_URL", "postgres://localhost/dev"],
+  ["add", "dev", "WRITE_CHECK", "yes"],
+]
+
+[[scenario.setup]]
+label = "stabilize edit ordering"
+sleep_ms = 1000
+
+[[scenario.case]]
+label = "edit dev"
+env = ["ENVELOPE_EDITOR={fake_editor}"]
+command = ["edit", "dev"]
+
+[[scenario.case]]
+label = "list dev after edit"
+command = ["list", "dev"]
+stdout = """
+DATABASE_URL=postgres://localhost/edited
+EDITED_KEY=from-editor
+"""
