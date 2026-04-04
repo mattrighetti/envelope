@@ -49,7 +49,8 @@ mod test {
     use sqlx::SqlitePool;
 
     use super::*;
-    use crate::db::{EnvelopeDb, model::EnvironmentRow};
+    use crate::db::EnvelopeDb;
+    use crate::db::model::EnvironmentRow;
 
     pub fn stdin_input(s: &str) -> BufReader<&[u8]> {
         BufReader::new(s.as_bytes())
