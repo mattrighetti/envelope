@@ -6,18 +6,34 @@ use sqlx::sqlite::{SqliteConnectOptions, SqliteOwnedBuf, SqlitePoolOptions};
 use super::LockedEnvelope;
 use crate::core::crypto::encrypt;
 use crate::core::crypto::header::EnvelopeFileHeader;
-use crate::core::{envelope_path_exists, envelope_tmp_path};
+use crate::core::{envelope_path, envelope_path_exists, envelope_tmp_path};
 use crate::db::EnvelopeDb;
 
 /// Represents an unlocked (unencrypted) envelope with database access.
 pub struct UnlockedEnvelope {
-    db: EnvelopeDb,
+    pub(crate) db: EnvelopeDb,
 }
 
 impl UnlockedEnvelope {
-    /// Creates an UnlockedEnvelope with an existing database connection.
-    pub(crate) fn with_db(db: EnvelopeDb) -> Self {
-        Self { db }
+    pub(crate) async fn init() -> Result<Self> {
+        let path = envelope_path()?;
+
+        let opts = SqliteConnectOptions::new()
+            .filename(path)
+            .create_if_missing(true);
+
+        let pool = sqlx::sqlite::SqlitePool::connect_with(opts)
+            .await
+            .context("failed to open .envelope database")?;
+
+        sqlx::migrate!("./migrations")
+            .run(&pool)
+            .await
+            .context("failed to initialize database schema")?;
+
+        let db = EnvelopeDb::with(pool);
+
+        Ok(Self { db })
     }
 
     pub fn db(&self) -> &EnvelopeDb {
@@ -34,15 +50,18 @@ impl UnlockedEnvelope {
             .await
             .context("failed to open .envelope database")?;
 
-        Ok(Self::with_db(EnvelopeDb::with(pool)))
+        let db = EnvelopeDb::with(pool);
+
+        Ok(Self { db })
     }
 
     /// Opens an in-memory envelope from raw SQLite bytes.
     pub(crate) async fn open_in_memory(bytes: &[u8]) -> Result<Self> {
+        let opts = SqliteConnectOptions::new().in_memory(true);
         let pool = SqlitePoolOptions::new()
             .max_connections(1)
             .min_connections(1)
-            .connect("sqlite::memory:")
+            .connect_with(opts)
             .await
             .context("failed to create in-memory database")?;
 
@@ -59,7 +78,9 @@ impl UnlockedEnvelope {
             .context("failed to load database into memory")?;
         drop(conn);
 
-        Ok(Self::with_db(EnvelopeDb::with(pool)))
+        let db = EnvelopeDb::with(pool);
+
+        Ok(Self { db })
     }
 
     /// Encrypts the in-memory database with the provided password.
