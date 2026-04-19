@@ -2,6 +2,27 @@
 All notable changes to this project will be documented in this file. See [conventional commits](https://www.conventionalcommits.org/) for commit guidelines.
 
 - - -
+## 0.8.0 - 2026-04-19
+#### Features
+- run commands on locked envelope - (3240a9f) - Mattia Righetti
+#### Documentation
+- (**man**) add missing commands and improve detail - (689c180) - Mattia Righetti
+#### Tests
+- add cli binary coverage - (a2629a3) - Mattia Righetti
+#### Refactoring
+- simplify envelope state handling - (62bacbc) - Mattia Righetti
+- use sqlx::test - (204a1e9) - Mattia Righetti
+- simplify errors with anyhow - (b996d1d) - Mattia Righetti
+#### Miscellaneous Chores
+- (**ci**) optimize workflow performance with caching and taiki-e - (194baf5) - Mattia Righetti
+- (**cog**) update cog.toml for cog v7 - (78a5b80) - Mattia Righetti
+- bump rand to 0.10.1 - (e2b4ebd) - Mattia Righetti
+- added note about aur package to readme - (aa95118) - mroetsc
+- update README - (c2ddcf5) - Mattia Righetti
+- cargo +nightly fmt - (90ae99f) - Mattia Righetti
+
+- - -
+
 ## 0.7.1 - 2026-02-16
 #### Bug Fixes
 - print help if no argument is provided in TTY env - (dc2b3fa) - Mattia Righetti
