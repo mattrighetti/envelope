@@ -57,32 +57,33 @@ pub enum EnvelopeCmd {
 
 impl EnvelopeCmd {
     pub async fn run(self) -> Result<()> {
-        let state = core::state::detect()?;
+        let state = core::state::detect().await?;
 
         match (self, state) {
             // init: only valid when uninitialized
             (Self::Init, None) => {
-                core::init().await?;
+                UnlockedEnvelope::init().await?;
                 Ok(())
             }
             (Self::Init, _) => bail!("envelope is already initialized"),
 
             // unlock: only valid when locked
-            (Self::Unlock, Some(EnvelopeState::Locked(env))) => {
+            (Self::Unlock, Some(EnvelopeState::Locked(lenvelope))) => {
                 let password = utils::prompt_password("Password: ")?;
-                env.unlock(&password)?;
+                let path = core::envelope_path()?;
+                lenvelope.unlock(&password).await?.store(&path).await?;
                 println!("database unlocked successfully");
                 Ok(())
             }
-            (Self::Unlock, Some(EnvelopeState::Unlocked)) => {
+            (Self::Unlock, Some(EnvelopeState::Unlocked(_))) => {
                 bail!("envelope is already unlocked")
             }
 
             // lock: only valid when unlocked
-            (Self::Lock, Some(EnvelopeState::Unlocked)) => {
+            (Self::Lock, Some(EnvelopeState::Unlocked(uenvelope))) => {
                 let password = utils::prompt_password_confirm()?;
-                let envelope = UnlockedEnvelope::open().await?;
-                envelope.lock(&password)?;
+                let path = core::envelope_path()?;
+                uenvelope.lock(&password).await?.store(&path)?;
                 println!("database locked successfully");
                 Ok(())
             }
@@ -91,20 +92,18 @@ impl EnvelopeCmd {
             }
 
             // all other commands: only valid when unlocked
-            (cmd, Some(EnvelopeState::Unlocked)) => {
-                let UnlockedEnvelope { db } = UnlockedEnvelope::open().await?;
-                cmd.run_with_db(&db).await
-            }
+            (cmd, Some(EnvelopeState::Unlocked(envelope))) => cmd.run_with_db(envelope.db()).await,
 
             // all other commands when locked: ask for password, decrypt to
-            // memory, run, re-encrypt if modified
+            // memory, run, re-encrypt if modified. The unlocked working copy
+            // stays in memory for the duration of the command.
             (cmd, Some(EnvelopeState::Locked(envelope))) => {
                 let password = utils::prompt_password("Password: ")?;
-                let plaintext = envelope.decrypt_bytes(&password)?;
-                let unlocked = UnlockedEnvelope::open_in_memory(&plaintext).await?;
-                cmd.run_with_db(&unlocked.db).await?;
-                if unlocked.db.total_changes().await? > 0 {
-                    unlocked.store_locked(&password).await?;
+                let unlocked = envelope.unlock(&password).await?;
+                cmd.run_with_db(unlocked.db()).await?;
+                if unlocked.db().total_changes().await? > 0 {
+                    let path = core::envelope_path()?;
+                    unlocked.lock(&password).await?.store(&path)?;
                 }
                 Ok(())
             }
