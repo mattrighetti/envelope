@@ -39,7 +39,6 @@ impl UnlockedEnvelope {
                     .filename(&path)
                     .create_if_missing(true)
                     .foreign_keys(true)
-                    .journal_mode(sqlx::sqlite::SqliteJournalMode::Wal)
                     .busy_timeout(std::time::Duration::from_secs(5)),
             )
             .await
@@ -71,7 +70,6 @@ impl UnlockedEnvelope {
                     .filename(path)
                     .create_if_missing(false)
                     .foreign_keys(true)
-                    .journal_mode(sqlx::sqlite::SqliteJournalMode::Wal)
                     .busy_timeout(std::time::Duration::from_secs(5)),
             )
             .await
