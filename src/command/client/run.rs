@@ -1,6 +1,7 @@
 use anyhow::{Context, Result, ensure};
 use clap::Parser;
 
+use super::CommandOutcome;
 use crate::db::EnvelopeDb;
 use crate::subproc::ChildProcess;
 
@@ -19,7 +20,7 @@ pub struct Cmd {
 }
 
 impl Cmd {
-    pub async fn run(&self, db: &EnvelopeDb) -> Result<()> {
+    pub async fn run(&self, db: &EnvelopeDb) -> Result<CommandOutcome> {
         ensure!(
             db.env_exists(&self.env).await?,
             "environment '{}' does not exist",
@@ -42,9 +43,35 @@ impl Cmd {
             .context("failed to run command")?;
 
         if !status.success() {
-            std::process::exit(status.code().unwrap_or(1));
+            return Ok(CommandOutcome::ChildFailure { status });
         }
 
-        Ok(())
+        Ok(CommandOutcome::Success)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use sqlx::SqlitePool;
+
+    use super::*;
+
+    #[sqlx::test]
+    async fn child_failure_returns_control_to_the_caller(pool: SqlitePool) {
+        let db = EnvelopeDb::with(pool);
+        db.insert("test", "KEY", "value").await.unwrap();
+        let cmd = Cmd {
+            env: "test".into(),
+            isolated: false,
+            args: vec!["sh".into(), "-c".into(), "exit 7".into()],
+        };
+
+        let result = cmd.run(&db).await;
+
+        let outcome = result.expect("spawning the child should succeed");
+        let CommandOutcome::ChildFailure { status } = outcome else {
+            panic!("child failure should be returned as an outcome");
+        };
+        assert_eq!(status.code(), Some(7));
     }
 }

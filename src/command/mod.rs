@@ -1,3 +1,3 @@
 mod client;
 
-pub use client::EnvelopeCmd;
+pub(crate) use client::{CommandOutcome, EnvelopeCmd};
