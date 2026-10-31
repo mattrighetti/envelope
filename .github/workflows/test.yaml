@@ -107,10 +107,7 @@ jobs:
       - name: Build envelope and all crates
         run: ${{ env.CARGO }} build --verbose --workspace ${{ env.TARGET_FLAGS }}
 
-      - name: Run tests (with cross)
-        # These tests should actually work, but they almost double the runtime.
-        # Every integration test spins up qemu to run 'envelope'
-        if: matrix.target != ''
+      - name: Run tests
         run: ${{ env.CARGO }} test --verbose --workspace ${{ env.TARGET_FLAGS }}
 
   e2e:
@@ -139,6 +136,35 @@ jobs:
 
       - name: Run e2e tests
         run: ci/e2e-test target/release/envelope
+
+  shells:
+    name: shells (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-latest
+            shells: sh bash zsh fish nu pwsh
+          - os: windows-latest
+            shells: cmd pwsh
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+      - name: Install Unix shells
+        if: runner.os == 'Linux'
+        run: sudo apt-get update && sudo apt-get install -y fish zsh
+      - name: Install Nushell
+        if: runner.os == 'Linux'
+        run: cargo install nu --locked --version 0.116.1
+      - run: cargo build --locked
+      - name: Test shell environment loading
+        shell: bash
+        run: python ci/shell-test target/debug/envelope ${{ matrix.shells }}
 
   rustfmt:
     runs-on: ubuntu-latest
