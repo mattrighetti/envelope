@@ -154,7 +154,7 @@ envelope list dev --shell nu | from json | load-env
 ```
 
 ```powershell
-# PowerShell (join lines to preserve multiline values)
+# PowerShell
 envelope list dev --shell powershell | Out-String | Invoke-Expression
 ```
 

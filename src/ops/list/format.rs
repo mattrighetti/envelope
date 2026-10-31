@@ -95,11 +95,18 @@ fn valid_name(key: &str) -> bool {
 fn quote_powershell(value: &str) -> String {
     let mut escaped = String::with_capacity(value.len());
     for ch in value.chars() {
-        // PowerShell also treats typographic double quotes as delimiters.
-        if matches!(ch, '`' | '$' | '"' | '“' | '”') {
-            escaped.push('`');
+        match ch {
+            // Keep each assignment on one line: native command pipelines and
+            // Out-String otherwise normalize embedded line endings on Windows.
+            '\r' => escaped.push_str("`r"),
+            '\n' => escaped.push_str("`n"),
+            // PowerShell also treats typographic double quotes as delimiters.
+            '`' | '$' | '"' | '“' | '”' => {
+                escaped.push('`');
+                escaped.push(ch);
+            }
+            _ => escaped.push(ch),
         }
-        escaped.push(ch);
     }
     escaped
 }
@@ -160,6 +167,16 @@ mod tests {
                 }
             );
         }
+    }
+
+    #[test]
+    fn powershell_preserves_line_endings_through_text_pipelines() {
+        let output = render(
+            RawOutputFormat::Powershell,
+            &[("KEY", "line1\nline2\r\nline3\r`n`r\n")],
+        );
+        assert_eq!(output, "$env:KEY = \"line1`nline2`r`nline3`r``n``r`n\"\n");
+        assert_eq!(output.lines().count(), 1);
     }
 
     #[test]

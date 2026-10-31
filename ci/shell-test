@@ -31,7 +31,7 @@ def main():
             "SPACES": " leading and internal spaces",
             "META": "'\"\\$HOME `uname` $(uname); &|<>% !",
             "UNICODE": "café 🦀 “quoted”",
-            "MULTILINE": "line1\nline2\r\nline3",
+            "MULTILINE": "line1\nline2\r\nline3\r`n`r\nend",
         }
         if shell == "cmd":
             # CMD rejects quotes, %, ! and newlines; empty means removal.
