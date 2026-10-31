@@ -21,6 +21,8 @@ pub async fn import<W: Write, R: BufRead>(
     db: &EnvelopeDb,
     env: &str,
 ) -> Result<()> {
+    let mut variables = Vec::new();
+
     for line in reader.lines() {
         let line = line.context("failed to read import input")?;
         if line.starts_with('#') {
@@ -29,19 +31,20 @@ pub async fn import<W: Write, R: BufRead>(
         }
 
         if let Some((k, v)) = line.split_once('=') {
-            db.insert(env, k, v).await?;
+            variables.push((k.to_owned(), v.to_owned()));
         } else {
             writeln!(writer, "invalid {line}, skipping")?;
         }
     }
 
-    Ok(())
+    db.apply_batch(env, &[], &variables).await
 }
 
 #[cfg(test)]
 mod test {
     use std::io::BufReader;
 
+    use sqlx::Row;
     use sqlx::SqlitePool;
 
     use super::*;
@@ -149,5 +152,34 @@ mod test {
             .expect_err("invalid UTF-8 input should fail the import");
 
         assert!(error.to_string().contains("failed to read import input"));
+    }
+
+    #[sqlx::test]
+    async fn test_import_rolls_back_on_database_error(pool: SqlitePool) {
+        // Reject the second row to verify the first row is rolled back too.
+        sqlx::query(
+            "CREATE TRIGGER reject_bad_key BEFORE INSERT ON environments
+             WHEN NEW.key = 'BAD' BEGIN SELECT RAISE(ABORT, 'rejected key'); END",
+        )
+        .execute(&pool)
+        .await
+        .unwrap();
+        let db = EnvelopeDb::with(pool.clone());
+        let mut output = Vec::new();
+
+        let result = import(
+            stdin_input("GOOD=value\nBAD=value"),
+            &mut output,
+            &db,
+            "prod",
+        )
+        .await;
+
+        assert!(result.is_err());
+        let rows = sqlx::query("SELECT COUNT(*) AS count FROM environments WHERE env = 'prod'")
+            .fetch_one(&pool)
+            .await
+            .unwrap();
+        assert_eq!(rows.get::<i64, _>("count"), 0);
     }
 }

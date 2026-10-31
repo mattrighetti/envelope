@@ -45,15 +45,7 @@ pub async fn edit(db: &EnvelopeDb, env: &str) -> Result<()> {
     let bytes = editor::spawn_with(&kv_list)?;
     let EditorData { delete, upsert } = parse(BufReader::new(&bytes))?;
 
-    for k in delete {
-        db.soft_delete_key_in_env(env, &k).await?;
-    }
-
-    for (k, v) in upsert {
-        db.insert(env, &k, &v).await?;
-    }
-
-    Ok(())
+    db.apply_batch(env, &delete, &upsert).await
 }
 
 #[cfg(test)]

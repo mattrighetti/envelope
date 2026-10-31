@@ -1,6 +1,6 @@
 use anyhow::{Context, Result, ensure};
 use model::*;
-use sqlx::SqlitePool;
+use sqlx::{Executor, Sqlite, SqlitePool};
 
 pub(crate) mod model;
 
@@ -49,13 +49,37 @@ impl EnvelopeDb {
 
     /// inserts `key` and `value` to environment `env`
     pub async fn insert(&self, env: &str, key: &str, var: &str) -> Result<()> {
-        sqlx::query(r"INSERT INTO environments (env, key, value) VALUES ($1, upper($2), $3)")
-            .bind(env)
-            .bind(key)
-            .bind(var)
-            .execute(&self.db)
+        insert_variable(&self.db, env, key, var).await
+    }
+
+    /// Applies variable deletions and upserts for one environment atomically.
+    ///
+    /// If any change fails, the transaction is rolled back and no changes are
+    /// persisted.
+    pub(crate) async fn apply_batch(
+        &self,
+        env: &str,
+        deletes: &[String],
+        upserts: &[(String, String)],
+    ) -> Result<()> {
+        let mut transaction = self
+            .db
+            .begin()
             .await
-            .context("failed to add variable")?;
+            .context("failed to begin environment update")?;
+
+        for key in deletes {
+            soft_delete_variable(&mut *transaction, env, key).await?;
+        }
+
+        for (key, value) in upserts {
+            insert_variable(&mut *transaction, env, key, value).await?;
+        }
+
+        transaction
+            .commit()
+            .await
+            .context("failed to commit environment update")?;
 
         Ok(())
     }
@@ -94,21 +118,7 @@ impl EnvelopeDb {
 
     /// Soft deletes specified variable in passed environment
     pub async fn soft_delete_key_in_env(&self, env: &str, key: &str) -> Result<()> {
-        sqlx::query(
-            r"INSERT INTO environments (env, key, value)
-            SELECT env, key, NULL
-            FROM active_envs
-            WHERE
-                env = $1 AND
-                key = UPPER($2)",
-        )
-        .bind(env)
-        .bind(key)
-        .execute(&self.db)
-        .await
-        .context("failed to delete variable from environment")?;
-
-        Ok(())
+        soft_delete_variable(&self.db, env, key).await
     }
 
     /// deletes environment from database entirely
@@ -339,6 +349,45 @@ impl EnvelopeDb {
 
         Ok(())
     }
+}
+
+async fn insert_variable<'e, E>(
+    executor: E,
+    env: &'e str,
+    key: &'e str,
+    value: &'e str,
+) -> Result<()>
+where
+    E: Executor<'e, Database = Sqlite>,
+{
+    sqlx::query("INSERT INTO environments (env, key, value) VALUES ($1, upper($2), $3)")
+        .bind(env)
+        .bind(key)
+        .bind(value)
+        .execute(executor)
+        .await
+        .context("failed to add variable")?;
+
+    Ok(())
+}
+
+async fn soft_delete_variable<'e, E>(executor: E, env: &'e str, key: &'e str) -> Result<()>
+where
+    E: Executor<'e, Database = Sqlite>,
+{
+    sqlx::query(
+        r"INSERT INTO environments (env, key, value)
+        SELECT env, key, NULL
+        FROM active_envs
+        WHERE env = $1 AND key = UPPER($2)",
+    )
+    .bind(env)
+    .bind(key)
+    .execute(executor)
+    .await
+    .context("failed to delete variable from environment")?;
+
+    Ok(())
 }
 
 #[cfg(test)]
