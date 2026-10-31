@@ -52,10 +52,21 @@ impl EnvironmentRowNullable {
 }
 
 #[derive(Debug, PartialEq, Eq)]
+/// Describes how a variable differs between two environments.
+///
+/// “First” and “second” refer to the environments in the same order they are
+/// passed to [`crate::db::EnvelopeDb::diff`].
 pub enum EnvironmentDiff {
-    InFirst(String, String),
-    InSecond(String, String),
-    Different(String, String, String),
+    /// The variable exists only in the first environment.
+    InFirst { key: String, value: String },
+    /// The variable exists only in the second environment.
+    InSecond { key: String, value: String },
+    /// The variable exists in both environments with different values.
+    Different {
+        key: String,
+        first_value: String,
+        second_value: String,
+    },
 }
 
 impl FromRow<'_, SqliteRow> for EnvironmentDiff {
@@ -66,10 +77,14 @@ impl FromRow<'_, SqliteRow> for EnvironmentDiff {
         );
 
         let val = match row.try_get::<String, _>("type")?.as_str() {
-            "+" => Self::InFirst(key, value),
-            "-" => Self::InSecond(key, value),
-            "/" => Self::Different(key, value, row.try_get("diff")?),
-            _ => panic!("unknown value"),
+            "+" => Self::InFirst { key, value },
+            "-" => Self::InSecond { key, value },
+            "/" => Self::Different {
+                key,
+                first_value: value,
+                second_value: row.try_get("diff")?,
+            },
+            value => return Err(sqlx::Error::Protocol(format!("unknown diff type: {value}"))),
         };
 
         Ok(val)

@@ -57,14 +57,15 @@ impl Cmd {
         match &self.env {
             None => ops::list_envs(&mut std::io::stdout(), db).await?,
             Some(env) => {
-                if !self.pretty_print {
-                    ops::list_raw(&mut std::io::stdout(), db, env, self.sort.to_str()).await?;
-                } else {
-                    let truncate = match self.truncate {
-                        true => db::Truncate::Max(60),
-                        false => db::Truncate::None,
+                if self.pretty_print {
+                    let truncate = if self.truncate {
+                        db::Truncate::Max(60)
+                    } else {
+                        db::Truncate::None
                     };
                     ops::table_list(db, env, truncate, self.sort.to_str()).await?;
+                } else {
+                    ops::list_raw(&mut std::io::stdout(), db, env, self.sort.to_str()).await?;
                 }
             }
         }

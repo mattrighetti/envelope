@@ -18,17 +18,12 @@ fn parse(bufr: BufReader<&[u8]>) -> Result<EditorData> {
     for kv in bufr.lines() {
         let kv = kv.context("failed to read edited environment")?;
 
-        match kv.starts_with("#") {
-            true => {
-                if let Some((k, _)) = kv.split_once("=") {
-                    delete.push(k[1..k.len()].trim().into());
-                }
+        if let Some(comment) = kv.strip_prefix('#') {
+            if let Some((key, _)) = comment.split_once('=') {
+                delete.push(key.trim().into());
             }
-            false => {
-                if let Some((k, v)) = kv.split_once("=") {
-                    upsert.push((k.trim().into(), v.trim().into()));
-                }
-            }
+        } else if let Some((key, value)) = kv.split_once('=') {
+            upsert.push((key.trim().into(), value.trim().into()));
         }
     }
 

@@ -27,9 +27,10 @@ async fn check_active_envs(db: &EnvelopeDb) -> Result<HashSet<String>> {
 
         match std::env::var(row.key) {
             Ok(val) => {
-                let set = match row.value == val {
-                    true => &mut active,
-                    false => &mut inactive,
+                let set = if row.value == val {
+                    &mut active
+                } else {
+                    &mut inactive
                 };
                 set.insert(row.env);
             }

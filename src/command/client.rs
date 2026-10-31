@@ -91,10 +91,10 @@ impl EnvelopeCmd {
             (Self::Init, _) => bail!("envelope is already initialized"),
 
             // unlock: only valid when locked
-            (Self::Unlock, Some(EnvelopeState::Locked(lenvelope))) => {
+            (Self::Unlock, Some(EnvelopeState::Locked(locked))) => {
                 let password = utils::prompt_password("Password: ")?;
                 let path = core::envelope_path()?;
-                lenvelope.unlock(&password).await?.store(&path).await?;
+                locked.unlock(&password).await?.store(&path).await?;
                 println!("database unlocked successfully");
                 Ok(CommandOutcome::Success)
             }
@@ -103,10 +103,10 @@ impl EnvelopeCmd {
             }
 
             // lock: only valid when unlocked
-            (Self::Lock, Some(EnvelopeState::Unlocked(uenvelope))) => {
+            (Self::Lock, Some(EnvelopeState::Unlocked(unlocked))) => {
                 let password = utils::prompt_password_confirm()?;
                 let path = core::envelope_path()?;
-                uenvelope.lock(&password).await?.store(&path)?;
+                unlocked.lock(&password).await?.store(&path)?;
                 println!("database locked successfully");
                 Ok(CommandOutcome::Success)
             }

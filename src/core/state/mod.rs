@@ -3,6 +3,7 @@ mod unlocked;
 
 use std::fs::File;
 use std::io::Read;
+use std::path::Path;
 
 use anyhow::{Context, Result, bail};
 pub(crate) use locked::LockedEnvelope;
@@ -47,7 +48,7 @@ pub(crate) async fn detect() -> Result<Option<EnvelopeState>> {
 /// This is the path-based implementation behind [`detect`] and is kept
 /// separate so tests can exercise format detection without mutating process
 /// state.
-async fn detect_at(path: &std::path::Path) -> Result<EnvelopeState> {
+async fn detect_at(path: &Path) -> Result<EnvelopeState> {
     let mut file = File::open(path)?;
     let mut buf = [0u8; HEADER_SIZE];
     let bytes_read = file.read(&mut buf)?;
@@ -268,7 +269,8 @@ mod tests {
         let dir = TempDir::new().unwrap();
         let path = dir.path().join(".envelope");
 
-        // Write the magic number + partial header (not enough for full HEADER_SIZE)
+        // Write the magic number + partial header (not enough for full
+        // HEADER_SIZE)
         let header = EnvelopeFileHeader::default();
         let full_header = header.to_bytes();
         // Magic is 12 bytes; write 20 bytes so it enters the encrypted branch

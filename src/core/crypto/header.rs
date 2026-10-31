@@ -92,10 +92,18 @@ impl From<&EnvelopeFileHeader> for [u8; HEADER_SIZE] {
         let mut buffer = [0u8; HEADER_SIZE];
         let mut writer = &mut buffer[..];
 
-        writer.write_all(&header.magic_number).unwrap();
-        writer.write_all(&[header.version]).unwrap();
-        writer.write_all(&header.argon_salt).unwrap();
-        writer.write_all(&header.xchacha_nonce).unwrap();
+        writer
+            .write_all(&header.magic_number)
+            .expect("header buffer has enough capacity");
+        writer
+            .write_all(&[header.version])
+            .expect("header buffer has enough capacity");
+        writer
+            .write_all(&header.argon_salt)
+            .expect("header buffer has enough capacity");
+        writer
+            .write_all(&header.xchacha_nonce)
+            .expect("header buffer has enough capacity");
 
         buffer
     }

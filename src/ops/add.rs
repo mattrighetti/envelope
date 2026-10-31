@@ -44,8 +44,7 @@ pub async fn import<W: Write, R: BufRead>(
 mod test {
     use std::io::BufReader;
 
-    use sqlx::Row;
-    use sqlx::SqlitePool;
+    use sqlx::{Row, SqlitePool};
 
     use super::*;
     use crate::db::EnvelopeDb;
