@@ -162,7 +162,13 @@ def execute_step(testdir: Path, binary: Path, step: dict, assert_result: bool) -
 
     if assert_result:
         assert_stream(step["label"], "stdout", expected_stdout, result.stdout)
-        assert_stream(step["label"], "stderr", expected_stderr, result.stderr)
+        if "stderr_contains" in step:
+            for fragment in step["stderr_contains"]:
+                if fragment not in result.stderr:
+                    print_failure_context(step["label"], result.returncode, result.stdout, result.stderr, step["command"])
+                    fail(f"stderr missing expected fragment: {fragment!r}")
+        else:
+            assert_stream(step["label"], "stderr", expected_stderr, result.stderr)
         pass_case(step["label"])
 
 

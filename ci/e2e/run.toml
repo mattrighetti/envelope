@@ -16,6 +16,12 @@ error: environment 'missing' does not exist
 """
 
 [[scenario.case]]
+label = "run runtime errors include their cause chain"
+command = ["run", "dev", "--", "envelope-command-that-does-not-exist"]
+status = 1
+stderr_contains = ["failed to run command", "failed to run 'envelope-command-that-does-not-exist'", "os error 2"]
+
+[[scenario.case]]
 label = "run inherits parent env"
 env = ["PARENT_ONLY=present"]
 command = ["run", "dev", "--", "sh", "-c", "printf \"%s|%s\" \"$DATABASE_URL\" \"$PARENT_ONLY\""]
