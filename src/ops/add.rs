@@ -1,6 +1,6 @@
 use std::io::{BufRead, Write};
 
-use anyhow::{Result, ensure};
+use anyhow::{Context, Result, ensure};
 
 use crate::db::EnvelopeDb;
 
@@ -22,11 +22,7 @@ pub async fn import<W: Write, R: BufRead>(
     env: &str,
 ) -> Result<()> {
     for line in reader.lines() {
-        if line.is_err() {
-            continue;
-        }
-
-        let line = line.unwrap();
+        let line = line.context("failed to read import input")?;
         if line.starts_with('#') {
             writeln!(writer, "skipping {line}")?;
             continue;
@@ -140,5 +136,18 @@ mod test {
             "skipping #k=v\nskipping #invalid-value\ninvalid key value, skipping\n",
             output
         );
+    }
+
+    #[sqlx::test]
+    async fn test_import_propagates_input_errors(pool: SqlitePool) {
+        let db = EnvelopeDb::with(pool);
+        let mut output = Vec::new();
+        let input = BufReader::new(&b"KEY=value\n\xffinvalid"[..]);
+
+        let error = import(input, &mut output, &db, "prod")
+            .await
+            .expect_err("invalid UTF-8 input should fail the import");
+
+        assert!(error.to_string().contains("failed to read import input"));
     }
 }
