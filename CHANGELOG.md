@@ -2,6 +2,24 @@
 All notable changes to this project will be documented in this file. See [conventional commits](https://www.conventionalcommits.org/) for commit guidelines.
 
 - - -
+## 0.8.1 - 2026-10-31
+#### Bug Fixes
+- (**cli**) display complete error chains - (d48a2fa) - Mattia Righetti
+- (**db**) make bulk mutations atomic - (e5ca898) - Mattia Righetti
+- (**editor**) clean up plaintext edit files - (c067bba) - Mattia Righetti
+- (**editor**) reject unsuccessful editor exits - (18ea83b) - Mattia Righetti
+- (**input**) propagate line read failures - (49576b0) - Mattia Righetti
+- (**run**) return child exit status to main - (866e345) - Mattia Righetti
+- use stable sqlx release - (db8929a) - Mattia Righetti
+#### Refactoring
+- clean up code - (007dc52) - Mattia Righetti
+- drop sqlite wal mode - (b68fed6) - Mattia Righetti
+#### Miscellaneous Chores
+- update Rust toolchain to 1.97.1 - (3f70884) - Mattia Righetti
+- bump deps - (86baa08) - Mattia Righetti
+
+- - -
+
 ## 0.8.0 - 2026-04-19
 #### Features
 - run commands on locked envelope - (3240a9f) - Mattia Righetti

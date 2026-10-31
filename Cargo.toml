@@ -1,6 +1,6 @@
 [package]
 name = "envelope"
-version = "0.8.0"
+version = "0.8.1"
 license = "MIT or Unlicense"
 edition = "2024"
 rust-version = "1.97.1"
