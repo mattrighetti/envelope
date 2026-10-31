@@ -13,7 +13,6 @@ pub struct Cmd {
 
 impl Cmd {
     pub async fn run(&self, db: &EnvelopeDb) -> Result<()> {
-        ops::edit(db, &self.env).await?;
-        Ok(())
+        ops::edit(db, &self.env).await
     }
 }

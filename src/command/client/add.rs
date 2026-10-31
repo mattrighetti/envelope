@@ -30,18 +30,11 @@ impl Cmd {
             bail!("cannot specify both a value argument and --stdin");
         }
 
-        let mut value = String::new();
-        match self.stdin {
-            true => {
-                writeln!(std::io::stdout(), "Enter value for env {}: ", self.key)?;
-                let stdin = std::io::stdin();
-                stdin.lock().read_line(&mut value)?;
-            }
-            false => {
-                if self.value.is_some() {
-                    value = self.value.clone().unwrap();
-                }
-            }
+        let mut value = self.value.clone().unwrap_or_default();
+        if self.stdin {
+            writeln!(std::io::stdout(), "Enter value for env {}: ", self.key)?;
+            let stdin = std::io::stdin();
+            stdin.lock().read_line(&mut value)?;
         }
 
         ops::add_var(db, &self.env, &self.key, value.trim_end()).await

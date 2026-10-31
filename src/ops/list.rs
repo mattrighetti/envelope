@@ -1,5 +1,4 @@
-use std::io;
-use std::io::{BufRead, Write};
+use std::io::{self, BufRead, Write};
 
 use anyhow::{Context, Result, ensure};
 use prettytable::{Table, row};

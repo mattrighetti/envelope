@@ -14,14 +14,21 @@ pub async fn diff<W: Write>(writer: &mut W, db: &EnvelopeDb, env1: &str, env2: &
     let diffs = db.diff(env1, env2).await?;
     for diff in diffs {
         match diff {
-            EnvironmentDiff::InFirst(k, v) => {
-                writeln!(writer, "{ANSI_GREEN}+ {k}={v}{ANSI_DEFAULT}")?;
+            EnvironmentDiff::InFirst { key, value } => {
+                writeln!(writer, "{ANSI_GREEN}+ {key}={value}{ANSI_DEFAULT}")?;
             }
-            EnvironmentDiff::InSecond(k, v) => {
-                writeln!(writer, "{ANSI_RED}- {k}={v}{ANSI_DEFAULT}")?;
+            EnvironmentDiff::InSecond { key, value } => {
+                writeln!(writer, "{ANSI_RED}- {key}={value}{ANSI_DEFAULT}")?;
             }
-            EnvironmentDiff::Different(k, v1, v2) => {
-                writeln!(writer, "{ANSI_GRAY}/ {k}={v1} -> {v2}{ANSI_DEFAULT}")?;
+            EnvironmentDiff::Different {
+                key,
+                first_value,
+                second_value,
+            } => {
+                writeln!(
+                    writer,
+                    "{ANSI_GRAY}/ {key}={first_value} -> {second_value}{ANSI_DEFAULT}"
+                )?;
             }
         }
     }

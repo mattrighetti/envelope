@@ -53,7 +53,8 @@ fn main() -> ExitCode {
     match Envelope::parse().run() {
         Ok(outcome) => outcome.into(),
         Err(err) => {
-            // Most errors have one layer, so showing causes shouldn't clutter stderr.
+            // Most errors have one layer, so showing causes shouldn't clutter
+            // stderr.
             _ = writeln!(io::stderr(), "error: {err:#}");
             ExitCode::FAILURE
         }

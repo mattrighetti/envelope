@@ -16,8 +16,6 @@ pub struct Cmd {
 
 impl Cmd {
     pub async fn run(&self, db: &EnvelopeDb) -> Result<()> {
-        ops::revert(db, &self.env, &self.key).await?;
-
-        Ok(())
+        ops::revert(db, &self.env, &self.key).await
     }
 }
