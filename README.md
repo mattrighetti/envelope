@@ -139,6 +139,38 @@ SECRET_KEY=mysecretkey123
 SMTP_HOST=smtp.example.com
 ```
 
+Load variables into your current shell with `--shell`. Values are quoted so spaces,
+quotes, and shell expressions remain literal:
+
+```sh
+# sh / bash / zsh
+eval "$(envelope list dev --shell sh)"
+
+# fish
+envelope list dev --shell fish | source
+
+# Nushell
+envelope list dev --shell nu | from json | load-env
+```
+
+```powershell
+# PowerShell (join lines to preserve multiline values)
+envelope list dev --shell powershell | Out-String | Invoke-Expression
+```
+
+```bat
+:: Interactive Windows Command Prompt
+for /f "delims=" %i in ('envelope list dev --shell cmd') do @%i
+```
+
+Formats: `kv` (the unchanged default), `sh`, `fish`, `nu`, `cmd`, `powershell`.
+Aliases: `bash`/`zsh` for `sh`, `nushell` for `nu`, `pwsh` for `powershell`.
+`--shell` requires an environment and cannot be combined with `--pretty-print`.
+Shell output requires variable names matching `[A-Za-z_][A-Za-z0-9_]*` and values
+without NUL bytes. CMD output rejects values containing `%`, `!`, double quotes,
+or newlines; use PowerShell for those values. In CMD, assigning an empty value
+removes the variable.
+
 Pretty print with a table format:
 ```console
 $ envelope list dev --pretty-print
