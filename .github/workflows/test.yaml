@@ -160,7 +160,17 @@ jobs:
         run: sudo apt-get update && sudo apt-get install -y fish zsh
       - name: Install Nushell
         if: runner.os == 'Linux'
-        run: cargo install nu --locked --version 0.116.1
+        env:
+          NU_VERSION: 0.116.1
+          NU_SHA256: d6d8ace4be491ed8abba4026e73b60c0470b4671d7039307e7d772282ef863da
+        run: |
+          curl --fail --location --retry 3 \
+            "https://github.com/nushell/nushell/releases/download/${NU_VERSION}/nu-${NU_VERSION}-x86_64-unknown-linux-gnu.tar.gz" \
+            --output "$RUNNER_TEMP/nu.tar.gz"
+          echo "$NU_SHA256  $RUNNER_TEMP/nu.tar.gz" | sha256sum --check
+          mkdir -p "$RUNNER_TEMP/nu"
+          tar -xzf "$RUNNER_TEMP/nu.tar.gz" -C "$RUNNER_TEMP/nu" --strip-components=1
+          echo "$RUNNER_TEMP/nu" >> "$GITHUB_PATH"
       - run: cargo build --locked
       - name: Test shell environment loading
         shell: bash
