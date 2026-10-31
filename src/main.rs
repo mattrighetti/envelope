@@ -7,9 +7,11 @@ mod subproc;
 mod utils;
 
 use std::io::{self, IsTerminal, Write};
+use std::process::ExitCode;
 
+use anyhow::Result;
 use clap::{CommandFactory, Parser};
-use command::EnvelopeCmd;
+use command::{CommandOutcome, EnvelopeCmd};
 
 const VERSION: &str = env!("CARGO_PKG_VERSION");
 
@@ -34,22 +36,25 @@ struct Envelope {
 
 impl Envelope {
     #[tokio::main(flavor = "current_thread")]
-    async fn run(self) -> anyhow::Result<()> {
+    async fn run(self) -> Result<CommandOutcome> {
         if let Some(cmd) = self.envelope {
-            cmd.run().await?
+            cmd.run().await
         } else if !io::stdin().is_terminal() {
-            ops::print_from_stdin().await?
+            ops::print_from_stdin().await?;
+            Ok(CommandOutcome::Success)
         } else {
-            Self::command().print_help()?
+            Self::command().print_help()?;
+            Ok(CommandOutcome::Success)
         }
-
-        Ok(())
     }
 }
 
-fn main() {
-    if let Err(err) = Envelope::parse().run() {
-        _ = writeln!(std::io::stderr(), "error: {err}");
-        std::process::exit(1);
+fn main() -> ExitCode {
+    match Envelope::parse().run() {
+        Ok(outcome) => outcome.into(),
+        Err(err) => {
+            _ = writeln!(io::stderr(), "error: {err}");
+            ExitCode::FAILURE
+        }
     }
 }
