@@ -31,7 +31,7 @@ const ARGON_TIME_COST: u32 = 1; // 1 iteration
 #[cfg(test)]
 const ARGON_PARALLELISM: u32 = 1; // 1 thread
 
-fn derive_key(password: &[u8], salt: &[u8]) -> Result<Zeroizing<Vec<u8>>> {
+fn derive_key(password: &[u8], salt: &[u8]) -> Result<Zeroizing<[u8; KEY_LEN]>> {
     let params = Params::new(
         ARGON_MEMORY_KIB * KIB,
         ARGON_TIME_COST,
@@ -41,9 +41,9 @@ fn derive_key(password: &[u8], salt: &[u8]) -> Result<Zeroizing<Vec<u8>>> {
     .map_err(|e| anyhow::anyhow!("key derivation failed: {e}"))?;
     let argon2 = Argon2::new(argon2::Algorithm::Argon2id, argon2::Version::V0x13, params);
 
-    let mut key_bytes = Zeroizing::new(vec![0u8; KEY_LEN]);
+    let mut key_bytes = Zeroizing::new([0u8; KEY_LEN]);
     argon2
-        .hash_password_into(password, salt, &mut key_bytes)
+        .hash_password_into(password, salt, key_bytes.as_mut())
         .map_err(|e| anyhow::anyhow!("key derivation failed: {e}"))?;
 
     Ok(key_bytes)
@@ -58,11 +58,12 @@ pub(crate) fn encrypt(
     rand::rng().fill_bytes(&mut header.xchacha_nonce);
 
     let key = derive_key(password, &header.argon_salt)?;
-    let aead = XChaCha20Poly1305::new(key.as_slice().into());
+    let key_bytes: &[u8; KEY_LEN] = &key;
+    let aead = XChaCha20Poly1305::new(key_bytes.into());
     let aad = header.associated_data();
     let ciphertext = aead
         .encrypt(
-            header.xchacha_nonce.as_ref().into(),
+            (&header.xchacha_nonce).into(),
             Payload {
                 msg: blob,
                 aad: &aad,
@@ -86,11 +87,12 @@ pub(crate) fn decrypt(
     );
 
     let key = derive_key(password, &header.argon_salt)?;
-    let aead = XChaCha20Poly1305::new(key.as_slice().into());
+    let key_bytes: &[u8; KEY_LEN] = &key;
+    let aead = XChaCha20Poly1305::new(key_bytes.into());
     let aad = header.associated_data();
     let decrypted = aead
         .decrypt(
-            header.xchacha_nonce.as_ref().into(),
+            (&header.xchacha_nonce).into(),
             Payload {
                 msg: blob,
                 aad: &aad,
