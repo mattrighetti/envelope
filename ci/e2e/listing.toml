@@ -34,6 +34,45 @@ prod
 """
 
 [[scenario.case]]
+label = "list explicit kv"
+command = ["list", "dev", "--shell", "kv"]
+stdout = """
+DATABASE_URL=postgres://localhost/dev
+SECRET_KEY=abc123
+"""
+
+[[scenario.case]]
+label = "list bash sorted descending"
+command = ["list", "dev", "--shell", "bash", "--sort", "kd"]
+stdout = """
+export SECRET_KEY='abc123'
+export DATABASE_URL='postgres://localhost/dev'
+"""
+
+[[scenario.case]]
+label = "list fish"
+command = ["list", "dev", "--shell", "fish"]
+stdout = """
+set -gx DATABASE_URL 'postgres://localhost/dev'
+set -gx SECRET_KEY 'abc123'
+"""
+
+[[scenario.case]]
+label = "list nushell"
+command = ["list", "dev", "--shell", "nushell"]
+stdout = """
+{"DATABASE_URL": "postgres://localhost/dev", "SECRET_KEY": "abc123"}
+"""
+
+[[scenario.case]]
+label = "list pwsh"
+command = ["list", "dev", "--shell", "pwsh"]
+stdout = '''
+$env:DATABASE_URL = "postgres://localhost/dev"
+$env:SECRET_KEY = "abc123"
+'''
+
+[[scenario.case]]
 label = "list pretty"
 command = ["list", "dev", "--pretty-print"]
 stdout = """

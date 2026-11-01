@@ -1,0 +1,82 @@
+#!/usr/bin/env python3
+"""Run CLI output through real shells and compare exported values byte for byte.
+
+Usage: python ci/shell-test target/debug/envelope sh bash zsh fish nu pwsh
+Missing requested shells are failures, so CI cannot silently lose coverage.
+"""
+
+import json
+import os
+from pathlib import Path
+import shutil
+import subprocess
+import sys
+import tempfile
+
+
+def run(command, **kwargs):
+    return subprocess.run(command, check=True, capture_output=True, **kwargs)
+
+
+def main():
+    binary = str(Path(sys.argv[1]).resolve())
+    for shell in sys.argv[2:]:
+        executable = shutil.which(shell)
+        if executable is None:
+            raise RuntimeError(f"Required shell is missing: {shell}")
+        values = {
+            "EMPTY": "",
+            "SPACES": " leading and internal spaces",
+            "META": "'\"\\$HOME `uname` $(uname); &|<>% !",
+            "UNICODE": "café 🦀 “quoted”",
+            "MULTILINE": "line1\nline2\r\nline3\r`n`r\nend",
+        }
+        entries = {f"ENVELOPE_SHELL_{key}": value for key, value in values.items()}
+        with tempfile.TemporaryDirectory(prefix="envelope-shell-") as directory:
+            cwd = Path(directory)
+            run([binary, "init"], cwd=cwd)
+            for key, value in entries.items():
+                run([binary, "add", "dev", key, value], cwd=cwd)
+            probe = cwd / "probe.py"
+            probe.write_text(
+                "import json, os, sys\n"
+                "print(json.dumps({k: os.environ.get(k) for k in sys.argv[1:]}))\n",
+                encoding="utf-8",
+            )
+            env = os.environ.copy()
+            env.update({
+                "ENVELOPE_BINARY": binary,
+                "ENVELOPE_PYTHON": sys.executable,
+                "ENVELOPE_PROBE": str(probe),
+            })
+            # Seed values to prove empty assignments replace existing variables.
+            env.update({key: "old value" for key in entries})
+            keys = " ".join(entries)
+            probe_sh = f'"$ENVELOPE_PYTHON" "$ENVELOPE_PROBE" {keys}'
+            if shell in ("sh", "bash", "zsh"):
+                script = 'eval "$("$ENVELOPE_BINARY" list dev --shell sh)"; ' + probe_sh
+                command = [executable, "-c", script]
+            elif shell == "fish":
+                script = '"$ENVELOPE_BINARY" list dev --shell fish | source; ' + probe_sh
+                command = [executable, "--no-config", "-c", script]
+            elif shell == "nu":
+                script = '^$env.ENVELOPE_BINARY list dev --shell nu | from json | load-env; '
+                script += f'^$env.ENVELOPE_PYTHON $env.ENVELOPE_PROBE {keys}'
+                command = [executable, "--no-config-file", "-c", script]
+            elif shell == "pwsh":
+                script = '$ErrorActionPreference = "Stop"; '
+                script += '& $env:ENVELOPE_BINARY list dev --shell powershell | Out-String | Invoke-Expression; '
+                script += f'& $env:ENVELOPE_PYTHON $env:ENVELOPE_PROBE {keys}'
+                command = [executable, "-NoProfile", "-NonInteractive", "-Command", script]
+            else:
+                raise RuntimeError(f"Unsupported shell: {shell}")
+            result = run(command, cwd=cwd, env=env)
+            actual = json.loads(result.stdout)
+            expected = dict(entries)
+            if actual != expected:
+                raise AssertionError(f"{shell}: expected {expected!r}, got {actual!r}")
+            print(f"[ok] {shell}: CLI output loads and exports literal values")
+
+
+if __name__ == "__main__":
+    main()

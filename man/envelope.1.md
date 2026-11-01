@@ -78,13 +78,33 @@ COMMANDS
 :   Import variables from a `.env`-formatted *file* into environment *env*.
     Reads from stdin if *file* is not provided.
 
-**list** [*env*] [`-p`] [`-t`] [`-s` *order*]
+**list** [*env*] [`-p`] [`-t`] [`-s` *order*] [`--shell` *format*]
 :   Without *env*, list all environment names. With *env*, list its variables.
 
     `-p`, `--pretty-print`  Display variables in a formatted table.
     `-t`, `--truncate`      Truncate long values in table output (implies `-p`).
     `-s`, `--sort` *order*  Sort order: `k` key asc, `kd` key desc, `v` value asc,
                             `vd` value desc, `d` date asc (default), `dd` date desc.
+    `--shell` *format*     Output format: `kv` (default), `sh`, `fish`, `nu`,
+                            `powershell`. Aliases: `bash`/`zsh`, `nushell`, `pwsh`.
+                            Requires *env*; conflicts with `--pretty-print`.
+
+    Shell output requires names matching `[A-Za-z_][A-Za-z0-9_]*` and values
+    without NUL bytes. Supported platforms are Linux and macOS; Windows is
+    not currently supported.
+
+    Load variables into the current shell:
+
+    ```sh
+    eval "$(envelope list dev --shell sh)"          # sh / bash / zsh
+    envelope list dev --shell fish | source       # fish
+    envelope list dev --shell nu | from json | load-env
+    ```
+
+    ```powershell
+    envelope list dev --shell powershell | Out-String | Invoke-Expression
+    ```
+
 
 **lock**
 :   Encrypt the database with a password. Once locked, every command that reads

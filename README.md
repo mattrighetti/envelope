@@ -1,6 +1,8 @@
 # envelope
 envelope is a modern environment variables manager.
 
+Supported platforms: Linux and macOS. Windows is not currently supported.
+
 ```console
 A modern environment variables manager
 
@@ -138,6 +140,31 @@ DEBUG_MODE=true
 SECRET_KEY=mysecretkey123
 SMTP_HOST=smtp.example.com
 ```
+
+Load variables into your current shell with `--shell`. Values are quoted so spaces,
+quotes, and shell expressions remain literal:
+
+```sh
+# sh / bash / zsh
+eval "$(envelope list dev --shell sh)"
+
+# fish
+envelope list dev --shell fish | source
+
+# Nushell
+envelope list dev --shell nu | from json | load-env
+```
+
+```powershell
+# PowerShell
+envelope list dev --shell powershell | Out-String | Invoke-Expression
+```
+
+Formats: `kv` (the unchanged default), `sh`, `fish`, `nu`, `powershell`.
+Aliases: `bash`/`zsh` for `sh`, `nushell` for `nu`, `pwsh` for `powershell`.
+`--shell` requires an environment and cannot be combined with `--pretty-print`.
+Shell output requires variable names matching `[A-Za-z_][A-Za-z0-9_]*` and values
+without NUL bytes. PowerShell output is supported on Linux and macOS.
 
 Pretty print with a table format:
 ```console

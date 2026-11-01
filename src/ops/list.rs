@@ -6,6 +6,9 @@ use prettytable::{Table, row};
 use crate::db::model::{Environment, EnvironmentRow};
 use crate::db::{EnvelopeDb, Truncate};
 
+mod format;
+pub use format::RawOutputFormat;
+
 pub async fn print_from_stdin() -> Result<()> {
     let buf = io::BufReader::new(io::stdin());
     table_from_reader(buf)?.printstd();
@@ -65,6 +68,7 @@ pub async fn list_raw<W: Write>(
     db: &EnvelopeDb,
     env: &str,
     sort: &str,
+    format: RawOutputFormat,
 ) -> Result<()> {
     ensure!(
         db.env_exists(env).await?,
@@ -72,11 +76,11 @@ pub async fn list_raw<W: Write>(
     );
 
     let envs: Vec<EnvironmentRow> = db.list_kv_in_env_alt(env, Truncate::None, sort).await?;
-    for env in envs {
-        writeln!(writer, "{}={}", env.key, env.value)?;
-    }
-
-    Ok(())
+    format.write(
+        writer,
+        envs.iter()
+            .map(|row| (row.key.as_str(), row.value.as_str())),
+    )
 }
 
 pub async fn list_envs<W: Write>(writer: &mut W, db: &EnvelopeDb) -> Result<()> {

@@ -33,6 +33,19 @@ ci/e2e-test target/release/envelope run
 
 The filter matches either the scenario name or an individual case label.
 
+Shell loading is tested separately with real interpreters:
+
+```sh
+cargo build --locked
+python3 ci/shell-test target/debug/envelope sh bash zsh fish nu pwsh
+```
+
+Install the requested shells first; missing interpreters fail the test. CI runs
+these six shells on Ubuntu. Supported platforms are Linux and macOS. Each test creates
+a temporary database, loads the CLI output, and compares the environment seen by
+a child process, including empty values, quotes, metacharacters, Unicode, and
+multiline values.
+
 ## Spec Format
 
 Scenario setup is declared in the same file:

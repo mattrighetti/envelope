@@ -44,6 +44,10 @@ pub struct Cmd {
     #[arg(long, short)]
     pretty_print: bool,
 
+    /// Output variables for a shell (default: kv)
+    #[arg(long, requires = "env", conflicts_with = "pretty_print")]
+    shell: Option<ops::RawOutputFormat>,
+
     #[arg(long, short)]
     truncate: bool,
 
@@ -65,11 +69,48 @@ impl Cmd {
                     };
                     ops::table_list(db, env, truncate, self.sort.to_str()).await?;
                 } else {
-                    ops::list_raw(&mut std::io::stdout(), db, env, self.sort.to_str()).await?;
+                    ops::list_raw(
+                        &mut std::io::stdout(),
+                        db,
+                        env,
+                        self.sort.to_str(),
+                        self.shell.unwrap_or_default(),
+                    )
+                    .await?;
                 }
             }
         }
 
         Ok(())
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn shell_aliases_parse() {
+        for (alias, expected) in [
+            ("bash", ops::RawOutputFormat::Sh),
+            ("zsh", ops::RawOutputFormat::Sh),
+            ("nushell", ops::RawOutputFormat::Nu),
+            ("pwsh", ops::RawOutputFormat::Powershell),
+        ] {
+            let cmd = Cmd::try_parse_from(["list", "dev", "--shell", alias]).unwrap();
+            assert_eq!(cmd.shell, Some(expected));
+        }
+    }
+
+    #[test]
+    fn shell_requires_environment_and_conflicts_with_table_output() {
+        for args in [
+            vec!["list", "--shell", "sh"],
+            vec!["list", "dev", "--shell", "sh", "--pretty-print"],
+            vec!["list", "dev", "--shell", "unknown"],
+            vec!["list", "dev", "--shell", "cmd"],
+        ] {
+            assert!(Cmd::try_parse_from(args).is_err());
+        }
     }
 }
