@@ -1,6 +1,8 @@
 # envelope
 envelope is a modern environment variables manager.
 
+Supported platforms: Linux and macOS. Windows is not currently supported.
+
 ```console
 A modern environment variables manager
 
@@ -158,18 +160,11 @@ envelope list dev --shell nu | from json | load-env
 envelope list dev --shell powershell | Out-String | Invoke-Expression
 ```
 
-```bat
-:: Interactive Windows Command Prompt
-for /f "delims=" %i in ('envelope list dev --shell cmd') do @%i
-```
-
-Formats: `kv` (the unchanged default), `sh`, `fish`, `nu`, `cmd`, `powershell`.
+Formats: `kv` (the unchanged default), `sh`, `fish`, `nu`, `powershell`.
 Aliases: `bash`/`zsh` for `sh`, `nushell` for `nu`, `pwsh` for `powershell`.
 `--shell` requires an environment and cannot be combined with `--pretty-print`.
 Shell output requires variable names matching `[A-Za-z_][A-Za-z0-9_]*` and values
-without NUL bytes. CMD output rejects values containing `%`, `!`, double quotes,
-or newlines; use PowerShell for those values. In CMD, assigning an empty value
-removes the variable.
+without NUL bytes. PowerShell output is supported on Linux and macOS.
 
 Pretty print with a table format:
 ```console

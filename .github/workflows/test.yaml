@@ -146,8 +146,6 @@ jobs:
         include:
           - os: ubuntu-latest
             shells: sh bash zsh fish nu pwsh
-          - os: windows-latest
-            shells: cmd pwsh
     steps:
       - uses: actions/checkout@v4
       - uses: dtolnay/rust-toolchain@stable

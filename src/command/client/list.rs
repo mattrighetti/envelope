@@ -108,6 +108,7 @@ mod tests {
             vec!["list", "--shell", "sh"],
             vec!["list", "dev", "--shell", "sh", "--pretty-print"],
             vec!["list", "dev", "--shell", "unknown"],
+            vec!["list", "dev", "--shell", "cmd"],
         ] {
             assert!(Cmd::try_parse_from(args).is_err());
         }

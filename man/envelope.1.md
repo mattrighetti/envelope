@@ -85,13 +85,13 @@ COMMANDS
     `-t`, `--truncate`      Truncate long values in table output (implies `-p`).
     `-s`, `--sort` *order*  Sort order: `k` key asc, `kd` key desc, `v` value asc,
                             `vd` value desc, `d` date asc (default), `dd` date desc.
-    `--shell` *format*     Output format: `kv` (default), `sh`, `fish`, `nu`, `cmd`,
+    `--shell` *format*     Output format: `kv` (default), `sh`, `fish`, `nu`,
                             `powershell`. Aliases: `bash`/`zsh`, `nushell`, `pwsh`.
                             Requires *env*; conflicts with `--pretty-print`.
 
     Shell output requires names matching `[A-Za-z_][A-Za-z0-9_]*` and values
-    without NUL bytes. CMD rejects values containing `%`, `!`, double quotes,
-    or newlines; use PowerShell instead. Empty CMD assignments remove variables.
+    without NUL bytes. Supported platforms are Linux and macOS; Windows is
+    not currently supported.
 
     Load variables into the current shell:
 
@@ -105,9 +105,6 @@ COMMANDS
     envelope list dev --shell powershell | Out-String | Invoke-Expression
     ```
 
-    ```bat
-    for /f "delims=" %i in ('envelope list dev --shell cmd') do @%i
-    ```
 
 **lock**
 :   Encrypt the database with a password. Once locked, every command that reads

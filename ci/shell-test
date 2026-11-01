@@ -20,8 +20,6 @@ def run(command, **kwargs):
 
 def main():
     binary = str(Path(sys.argv[1]).resolve())
-    if os.name == "nt" and not Path(binary).exists():
-        binary += ".exe"
     for shell in sys.argv[2:]:
         executable = shutil.which(shell)
         if executable is None:
@@ -33,9 +31,6 @@ def main():
             "UNICODE": "café 🦀 “quoted”",
             "MULTILINE": "line1\nline2\r\nline3\r`n`r\nend",
         }
-        if shell == "cmd":
-            # CMD rejects quotes, %, ! and newlines; empty means removal.
-            values = {"EMPTY": "", "SPACES": " leading spaces", "META": "a^b & c|d <e> (f)"}
         entries = {f"ENVELOPE_SHELL_{key}": value for key, value in values.items()}
         with tempfile.TemporaryDirectory(prefix="envelope-shell-") as directory:
             cwd = Path(directory)
@@ -73,19 +68,11 @@ def main():
                 script += '& $env:ENVELOPE_BINARY list dev --shell powershell | Out-String | Invoke-Expression; '
                 script += f'& $env:ENVELOPE_PYTHON $env:ENVELOPE_PROBE {keys}'
                 command = [executable, "-NoProfile", "-NonInteractive", "-Command", script]
-            elif shell == "cmd":
-                rendered = run([binary, "list", "dev", "--shell", "cmd"], cwd=cwd).stdout
-                script_file = cwd / "load.cmd"
-                script_file.write_bytes(b"@echo off\r\n" + rendered +
-                    f'"%ENVELOPE_PYTHON%" "%ENVELOPE_PROBE%" {keys}\r\n'.encode())
-                command = [executable, "/d", "/v:off", "/c", str(script_file)]
             else:
                 raise RuntimeError(f"Unsupported shell: {shell}")
             result = run(command, cwd=cwd, env=env)
             actual = json.loads(result.stdout)
             expected = dict(entries)
-            if shell == "cmd":
-                expected["ENVELOPE_SHELL_EMPTY"] = None
             if actual != expected:
                 raise AssertionError(f"{shell}: expected {expected!r}, got {actual!r}")
             print(f"[ok] {shell}: CLI output loads and exports literal values")

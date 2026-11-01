@@ -41,11 +41,10 @@ python3 ci/shell-test target/debug/envelope sh bash zsh fish nu pwsh
 ```
 
 Install the requested shells first; missing interpreters fail the test. CI runs
-these six shells on Ubuntu and CMD plus PowerShell on Windows. Each test creates
+these six shells on Ubuntu. Supported platforms are Linux and macOS. Each test creates
 a temporary database, loads the CLI output, and compares the environment seen by
 a child process, including empty values, quotes, metacharacters, Unicode, and
-multiline values. CMD uses its supported subset and checks that empty assignments
-remove variables. Its generated commands are executed as a batch script.
+multiline values.
 
 ## Spec Format
 

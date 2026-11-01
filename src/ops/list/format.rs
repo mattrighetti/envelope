@@ -12,7 +12,6 @@ pub enum RawOutputFormat {
     Fish,
     #[value(alias = "nushell")]
     Nu,
-    Cmd,
     #[value(alias = "pwsh")]
     Powershell,
 }
@@ -36,14 +35,6 @@ impl RawOutputFormat {
                     !value.contains('\0'),
                     "shell output cannot contain NUL bytes"
                 );
-                if self == Self::Cmd {
-                    // CMD expansion depends on interactive/batch context and delayed
-                    // expansion settings. Reject ambiguous values rather than corrupt them.
-                    ensure!(
-                        !value.contains(['%', '!', '"', '\r', '\n']),
-                        "cmd output cannot represent values containing %, !, double quotes, or newlines; use PowerShell instead"
-                    );
-                }
             }
         }
 
@@ -72,7 +63,6 @@ impl RawOutputFormat {
                         "set -gx {key} '{}'",
                         value.replace('\\', "\\\\").replace('\'', "\\'")
                     )?,
-                    Self::Cmd => writeln!(writer, "set \"{key}={value}\"")?,
                     Self::Powershell => {
                         writeln!(writer, "$env:{key} = \"{}\"", quote_powershell(value))?
                     }
@@ -96,8 +86,8 @@ fn quote_powershell(value: &str) -> String {
     let mut escaped = String::with_capacity(value.len());
     for ch in value.chars() {
         match ch {
-            // Keep each assignment on one line: native command pipelines and
-            // Out-String otherwise normalize embedded line endings on Windows.
+            // Keep each assignment on one line so text pipelines preserve
+            // embedded carriage returns and newlines.
             '\r' => escaped.push_str("`r"),
             '\n' => escaped.push_str("`n"),
             // PowerShell also treats typographic double quotes as delimiters.
@@ -135,7 +125,6 @@ mod tests {
                 "a\\b' $HOME",
                 "set -gx KEY 'a\\\\b\\' $HOME'\n",
             ),
-            (RawOutputFormat::Cmd, "a^b & c|d", "set \"KEY=a^b & c|d\"\n"),
             (
                 RawOutputFormat::Powershell,
                 "\"$HOME` “x”",
@@ -153,7 +142,6 @@ mod tests {
             (RawOutputFormat::Kv, "KEY=\n"),
             (RawOutputFormat::Sh, "export KEY=''\n"),
             (RawOutputFormat::Fish, "set -gx KEY ''\n"),
-            (RawOutputFormat::Cmd, "set \"KEY=\"\n"),
             (RawOutputFormat::Powershell, "$env:KEY = \"\"\n"),
             (RawOutputFormat::Nu, "{\"KEY\": \"\"}\n"),
         ] {
@@ -194,7 +182,6 @@ mod tests {
             RawOutputFormat::Sh,
             RawOutputFormat::Fish,
             RawOutputFormat::Nu,
-            RawOutputFormat::Cmd,
             RawOutputFormat::Powershell,
         ] {
             for entry in [
@@ -212,19 +199,6 @@ mod tests {
             render(RawOutputFormat::Kv, &[("a.b", "value")]),
             "a.b=value\n"
         );
-    }
-
-    #[test]
-    fn cmd_rejects_context_dependent_expansion() {
-        for value in ["%PATH%", "!PATH!", "a\"b", "a\nb", "a\rb"] {
-            let mut output = Vec::new();
-            assert!(
-                RawOutputFormat::Cmd
-                    .write(&mut output, [("KEY", value)])
-                    .is_err()
-            );
-            assert!(output.is_empty());
-        }
     }
 
     #[cfg(unix)]

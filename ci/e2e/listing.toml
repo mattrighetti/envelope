@@ -65,14 +65,6 @@ stdout = """
 """
 
 [[scenario.case]]
-label = "list cmd"
-command = ["list", "dev", "--shell", "cmd"]
-stdout = """
-set "DATABASE_URL=postgres://localhost/dev"
-set "SECRET_KEY=abc123"
-"""
-
-[[scenario.case]]
 label = "list pwsh"
 command = ["list", "dev", "--shell", "pwsh"]
 stdout = '''
