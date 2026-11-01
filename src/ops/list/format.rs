@@ -24,7 +24,8 @@ impl RawOutputFormat {
     ) -> Result<()> {
         let entries: Vec<_> = entries.into_iter().collect();
         // Validate the whole environment before emitting executable output.
-        // Plain key/value output keeps accepting existing stored data unchanged.
+        // Plain key/value output keeps accepting existing stored data
+        // unchanged.
         if self != Self::Kv {
             for &(key, value) in &entries {
                 ensure!(
