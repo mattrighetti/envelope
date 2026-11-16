@@ -36,7 +36,7 @@ fn spawn_with_editor(data: &[u8], editor: &str, current_directory: &Path) -> Res
         .context("failed to flush temporary edit file")?;
 
     let editor_args = &[edit_path.as_str()];
-    let status = ChildProcess::new(&editor, editor_args, &[])
+    let status = ChildProcess::new(editor, editor_args, &[])
         .run()
         .context("failed to launch editor")?;
     ensure!(status.success(), "editor exited unsuccessfully: {status}");
