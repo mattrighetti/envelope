@@ -28,6 +28,9 @@ jobs:
       CROSS_VERSION: 0.2.5
       # Emit backtraces on panics.
       RUST_BACKTRACE: 1
+      # Override rust-toolchain.toml so each matrix entry uses its requested
+      # toolchain.
+      RUSTUP_TOOLCHAIN: ${{ matrix.rust }}
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
@@ -35,7 +38,7 @@ jobs:
         include:
           - build: pinned
             os: ubuntu-latest
-            rust: 1.99.1
+            rust: 1.100.0
           - build: stable
             os: ubuntu-latest
             rust: stable
@@ -50,7 +53,9 @@ jobs:
             rust: stable
             target: x86_64-unknown-linux-musl
           - build: stable-x86
-            os: ubuntu-latest
+            # Child processes fail with ENOSYS under i686 cross/QEMU on the
+            # Ubuntu 26.04 runner used by ubuntu-latest.
+            os: ubuntu-24.04
             rust: stable
             target: i686-unknown-linux-gnu
           - build: stable-aarch64
@@ -73,7 +78,7 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Install packages (Ubuntu)
-        if: matrix.os == 'ubuntu-latest'
+        if: startsWith(matrix.os, 'ubuntu-')
         run: |
           ci/ubuntu-install-packages
 
@@ -86,13 +91,13 @@ jobs:
         uses: Swatinem/rust-cache@v2
 
       - name: Install cross
-        if: matrix.os == 'ubuntu-latest' && matrix.target != ''
+        if: startsWith(matrix.os, 'ubuntu-') && matrix.target != ''
         uses: taiki-e/install-action@v2
         with:
           tool: cross@${{ env.CROSS_VERSION }}
 
       - name: Configure cross
-        if: matrix.os == 'ubuntu-latest' && matrix.target != ''
+        if: startsWith(matrix.os, 'ubuntu-') && matrix.target != ''
         shell: bash
         run: |
           echo "CARGO=cross" >> $GITHUB_ENV
