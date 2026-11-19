@@ -112,10 +112,7 @@ jobs:
       - name: Build envelope and all crates
         run: ${{ env.CARGO }} build --verbose --workspace ${{ env.TARGET_FLAGS }}
 
-      - name: Run tests (with cross)
-        # These tests should actually work, but they almost double the runtime.
-        # Every integration test spins up qemu to run 'envelope'
-        if: matrix.target != ''
+      - name: Run tests
         run: ${{ env.CARGO }} test --verbose --workspace ${{ env.TARGET_FLAGS }}
 
   e2e:
