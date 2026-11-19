@@ -1,4 +1,3 @@
-use std::fs;
 use std::path::Path;
 
 use anyhow::{Context, Result};
@@ -7,7 +6,7 @@ use sqlx::sqlite::{SqliteConnectOptions, SqliteOwnedBuf, SqlitePoolOptions};
 use super::LockedEnvelope;
 use crate::core::crypto::encrypt;
 use crate::core::crypto::header::EnvelopeFileHeader;
-use crate::core::{envelope_path, envelope_tmp_path_for};
+use crate::core::{envelope_path, store_bytes};
 use crate::db::EnvelopeDb;
 
 /// Represents an unlocked (unencrypted) envelope with database access.
@@ -132,10 +131,7 @@ impl UnlockedEnvelope {
     ///
     /// The target file is replaced atomically via a temporary file rename.
     pub(crate) async fn store(self, path: &Path) -> Result<()> {
-        let tmp_path = envelope_tmp_path_for(path);
         let data = self.db.serialize().await?;
-        fs::write(&tmp_path, &data)?;
-        fs::rename(&tmp_path, path)?;
-        Ok(())
+        store_bytes(path, &data)
     }
 }

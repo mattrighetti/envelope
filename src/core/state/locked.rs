@@ -1,4 +1,3 @@
-use std::fs;
 use std::path::Path;
 
 use anyhow::Result;
@@ -6,8 +5,8 @@ use zeroize::Zeroizing;
 
 use crate::core::crypto::decrypt;
 use crate::core::crypto::header::EnvelopeFileHeader;
-use crate::core::envelope_tmp_path_for;
 use crate::core::state::UnlockedEnvelope;
+use crate::core::store_bytes;
 
 /// Represents a locked (encrypted) envelope.
 ///
@@ -28,16 +27,13 @@ impl LockedEnvelope {
     ///
     /// The target file is replaced atomically via a temporary file rename.
     pub(crate) fn store(self, path: &Path) -> Result<()> {
-        let tmp_path = envelope_tmp_path_for(path);
         let data = [
             self.header.to_bytes().as_slice(),
             self.ciphertext.as_slice(),
         ]
         .concat();
 
-        fs::write(&tmp_path, &data)?;
-        fs::rename(&tmp_path, path)?;
-        Ok(())
+        store_bytes(path, &data)
     }
 
     /// Decrypts the envelope database file.
